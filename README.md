@@ -1,149 +1,99 @@
 # AI LipSync System
 
-Dự án nghiên cứu sinh video đồng bộ khẩu hình từ audio và khuôn mặt tham chiếu.
-Repository gồm hai phần liên kết với nhau:
+Repository khởi tạo cho đề tài nghiên cứu sinh video đồng bộ khẩu hình từ audio
+và khuôn mặt tham chiếu. Dự án hiện ở giai đoạn thiết kế: source chỉ chứa các
+class và entry point rỗng để thể hiện vai trò dự kiến; chưa có crawler, model,
+training, inference hoặc evaluation chạy thực tế.
 
-- `src/data/`: thu thập, kiểm tra và chuẩn bị bộ dữ liệu nghiên cứu.
-- `src/lipsync/`: chạy baseline, phát triển pipeline và đánh giá mô hình lip-sync.
-
-Dữ liệu thật nằm trong `data/`, không đặt trong `src/` và không commit vào Git.
 Tài liệu yêu cầu gốc nằm tại
 [`docs/AI-based_LipSync_System_Research_Specification_v1.0.docx`](docs/AI-based_LipSync_System_Research_Specification_v1.0.docx).
 
-## Luồng dữ liệu
+## Phạm vi source
 
-Dự án áp dụng cách phân tầng Bronze–Silver–Gold ở mức thư mục:
+```text
+src/
+  data/                     Thu thập và chuẩn bị dữ liệu nghiên cứu
+    pipeline.py             Crawl, Bronze, Silver, Gold và điều phối dataset
+  lipsync/                  Thuật toán và thí nghiệm lip-sync
+    __main__.py             Entry point dự kiến của ứng dụng
+    config.py               Cấu hình ứng dụng và thí nghiệm
+    pipeline.py             Điều phối pipeline tổng
+    audio/                  Pipeline audio
+    video/                  Pipeline video
+    models/                 Mô hình lip-sync
+    evaluation/             Đánh giá kết quả
+```
+
+Các module hiện chỉ có docstring và `pass`. Chúng là placeholder để thống nhất
+trách nhiệm trước khi chọn dataset, baseline và mô hình. Chỉ triển khai thêm
+logic khi bước nghiên cứu tương ứng bắt đầu.
+
+## Tổ chức dữ liệu
+
+Dữ liệu thật nằm ngoài `src/` và không được commit vào Git:
 
 ```text
 Nguồn crawl
     │
     ▼
-data/bronze/    Dữ liệu gốc và metadata nguồn
+data/bronze/    Media gốc, URL, thời điểm crawl, checksum và metadata nguồn
     │
     ▼
-data/silver/    Dữ liệu đã kiểm tra, làm sạch và chuẩn hóa
+data/silver/    Mẫu đã kiểm tra, loại trùng/lỗi, cắt đoạn và chuẩn hóa
     │
     ▼
-data/gold/      Manifest/split sẵn sàng cho một thí nghiệm cụ thể
+data/gold/      Manifest, phiên bản dataset và train/validation/test split
     │
     ▼
-src/lipsync/    Train, inference và evaluation
+Lip-sync experiments
 ```
 
-| Tầng | Nội dung | Nguyên tắc |
-| --- | --- | --- |
-| Bronze | Media tải về, URL, thời điểm crawl, checksum và metadata gốc | Giữ nguyên để có thể tái xử lý |
-| Silver | Mẫu hợp lệ đã loại lỗi/trùng, cắt đoạn và chuẩn hóa định dạng | Mỗi mẫu phải truy ngược được về Bronze |
-| Gold | Manifest train/validation/test và metadata của phiên bản dataset | Ưu tiên tham chiếu file Silver thay vì sao chép media |
+Bronze cần được giữ nguyên để có thể tái xử lý. Mỗi mẫu Silver phải truy ngược
+được về nguồn Bronze. Gold nên ưu tiên lưu manifest tham chiếu đến Silver thay vì
+sao chép toàn bộ media.
 
-Code chuyển đổi giữa các tầng sẽ nằm trong `src/data/`. Thư mục này hiện mới
-được tạo để chuẩn bị cho crawler và data pipeline; chưa có crawler được triển khai.
-Không sửa tay dữ liệu Silver hoặc Gold nếu kết quả đó có thể được tạo lại bằng code.
+## Các vai trò dự kiến
 
-## Pipeline lip-sync
+### Data pipeline
 
-`src/lipsync/` hiện có hai luồng:
+- `DataCrawler`: thu thập media và provenance metadata.
+- `BronzeStage`: lưu dữ liệu nguồn nguyên bản và checksum.
+- `SilverStage`: kiểm tra, loại trùng, phân đoạn và chuẩn hóa.
+- `GoldStage`: tạo manifest và dataset split có phiên bản.
+- `DatasetPipeline`: điều phối các bước trên.
 
-1. **Baseline Wav2Lip**: CLI gọi `inference.py` từ source Wav2Lip bên ngoài,
-   kiểm tra media bằng FFprobe và ghi manifest/log cho từng lần chạy.
-2. **Pipeline nghiên cứu dạng module**: xử lý audio và video, căn chỉnh thời gian,
-   fusion, sinh khẩu hình, render và đánh giá.
+### Lip-sync pipeline
 
-Hiện đã có nội suy đặc trưng theo timestamp và early fusion bằng concatenation.
-Các encoder, face processor, generator, renderer và evaluator vẫn là interface;
-repository chưa có training loop hoặc mô hình học sâu hoàn chỉnh. CLI `infer` hiện
-chỉ chạy baseline Wav2Lip, chưa chạy pipeline nghiên cứu dạng module.
-
-Xem [kiến trúc pipeline](docs/architecture.md) và
-[kế hoạch nghiên cứu](docs/research-plan.md).
+- `AudioPipeline`: chuẩn bị audio và đặc trưng đầu vào.
+- `VideoPipeline`: chuẩn bị frame, khuôn mặt và thông tin hình học.
+- `LipSyncModel`: sinh chuyển động môi đồng bộ.
+- `Evaluator`: đo độ đồng bộ, chất lượng hình ảnh và hiệu năng.
+- `LipSyncPipeline`: điều phối preprocessing, inference, render và evaluation.
 
 ## Cấu trúc repository
 
 ```text
-configs/                    Cấu hình thí nghiệm
 data/                       Dữ liệu local, không commit
-  bronze/                   Dữ liệu crawl nguyên bản
-  silver/                   Dữ liệu đã làm sạch và chuẩn hóa
-  gold/                     Manifest và dataset split cho thí nghiệm
-docs/                       Đặc tả, kiến trúc và kế hoạch nghiên cứu
+  bronze/
+  silver/
+  gold/
+docs/                       Đặc tả và kế hoạch nghiên cứu
 src/
-  data/                     Code crawl và chuẩn bị dataset (chưa triển khai)
+  data/                     Planning skeleton cho data pipeline
   lipsync/
-    audio/                  Xử lý và trích xuất đặc trưng audio
-    video/                  Frame, khuôn mặt và đặc trưng thị giác
-    alignment/              Căn chỉnh đặc trưng theo timeline
-    fusion/                 Fusion interface và concatenation
-    generation/             Interface sinh khẩu hình và render
-    evaluation/             Interface đánh giá
-    backends/               Adapter cho mô hình có sẵn
-    models/                 Nơi triển khai mô hình nghiên cứu
-    baseline.py             Chạy baseline và ghi manifest
-    pipeline.py             Điều phối pipeline nghiên cứu
-    cli.py                  Lệnh `doctor` và `infer`
-tests/                      Unit test cho điều phối, alignment và fusion
-checkpoints/                Trọng số local, không commit
-external/                   Source mô hình bên ngoài, không commit
-outputs/                    Kết quả thí nghiệm, không commit
+    audio/                  Audio skeleton
+    video/                  Video skeleton
+    models/                 Model skeleton
+    evaluation/             Evaluation skeleton
+    __main__.py             Application entry point
+    config.py               Configuration skeleton
+    pipeline.py             Top-level orchestration skeleton
+pyproject.toml              Metadata Python package tối thiểu
 ```
 
-## Cài đặt
+## Trạng thái hiện tại
 
-Yêu cầu Python 3.10 trở lên. FFmpeg và FFprobe phải có trong `PATH`.
+Command `lipsync` và `python -m lipsync` chỉ gọi entry point rỗng rồi kết thúc.
+Cài package hoặc gọi các class planning không tạo ra dữ liệu hay video lip-sync.
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e .
-.\.venv\Scripts\python.exe -m lipsync --help
-.\.venv\Scripts\python.exe -m lipsync doctor
-```
-
-Môi trường chạy Wav2Lip nên độc lập vì phiên bản Python và dependency của
-baseline có thể khác môi trường điều phối của repository.
-
-## Chạy baseline Wav2Lip
-
-1. Đặt source Wav2Lip tại `external/Wav2Lip`; thư mục phải chứa `inference.py`.
-2. Cài dependency theo hướng dẫn của Wav2Lip trong môi trường riêng.
-3. Đặt checkpoint tại `checkpoints/wav2lip.pth`.
-4. Cập nhật interpreter và đường dẫn trong `configs/wav2lip.json` nếu cần.
-
-Kiểm tra công cụ và artifact:
-
-```powershell
-.\.venv\Scripts\python.exe -m lipsync doctor --config configs/wav2lip.json
-```
-
-Lập kế hoạch chạy mà không gọi model:
-
-```powershell
-.\.venv\Scripts\python.exe -m lipsync infer `
-  --config configs/wav2lip.json `
-  --audio data/bronze/voice.wav `
-  --face data/bronze/face.mp4 `
-  --dry-run
-```
-
-Chạy inference bằng cách bỏ cờ `--dry-run`. Mỗi lần chạy tạo một thư mục trong
-`outputs/<run-id>/`, gồm manifest và log. Trạng thái `completed` chỉ xác nhận
-backend đã sinh video có luồng hình và âm thanh; nó chưa chứng minh chất lượng
-đồng bộ khẩu hình.
-
-## Kiểm tra source
-
-Các unit test hiện tại không cần GPU hoặc dependency ML:
-
-```powershell
-$env:PYTHONPATH = 'src'
-python -m unittest discover -s tests -v
-```
-
-Test sử dụng dữ liệu số và test double để kiểm tra wiring, alignment và fusion;
-chúng không thay thế kiểm thử với model, checkpoint và media thực tế.
-
-## Quy tắc lưu trữ
-
-- Không commit media, checkpoint, source baseline hoặc output thí nghiệm.
-- Ghi URL nguồn, quyền sử dụng, checksum và thời điểm crawl cho dữ liệu Bronze.
-- Tách train/validation/test theo người nói hoặc nguồn video để hạn chế rò rỉ dữ liệu.
-- Mỗi dataset Gold cần có manifest và phiên bản đủ để tái tạo từ Silver.
-- Mỗi kết quả nghiên cứu cần ghi cấu hình, phiên bản code, checkpoint và metric thực đo.
+Hướng triển khai dự kiến được ghi tại [docs/research-plan.md](docs/research-plan.md).

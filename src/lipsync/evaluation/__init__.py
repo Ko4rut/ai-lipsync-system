@@ -1,4 +1,5 @@
-"""Reserved for measured sync, visual quality, and performance metrics.
+"""Evaluation planning package."""
 
-No proxy or synthetic scores are reported as model evaluation results.
-"""
+from .evaluator import Evaluator
+
+__all__ = ["Evaluator"]

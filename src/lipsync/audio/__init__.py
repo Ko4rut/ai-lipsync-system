@@ -1,4 +1,4 @@
-"""Waveform preprocessing -> acoustic/phonetic features -> temporal patterns."""
+"""Audio processing planning package."""
 
 from .pipeline import AudioPipeline
 

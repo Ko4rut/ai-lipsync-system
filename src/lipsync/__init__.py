@@ -1,3 +1,5 @@
-"""Audio-driven lip synchronization research package."""
+"""Planning package for the future lip-sync implementation."""
 
-__version__ = "0.1.0"
+from .pipeline import LipSyncPipeline
+
+__all__ = ["LipSyncPipeline"]

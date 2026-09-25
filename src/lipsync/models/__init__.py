@@ -1,1 +1,5 @@
-"""Reserved for trainable audio/visual encoders and controlled fusion experiments."""
+"""Model planning package."""
+
+from .lipsync_model import LipSyncModel
+
+__all__ = ["LipSyncModel"]

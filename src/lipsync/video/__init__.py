@@ -1,4 +1,4 @@
-"""Frames -> face detection/alignment -> visual representation."""
+"""Video processing planning package."""
 
 from .pipeline import VideoPipeline
 

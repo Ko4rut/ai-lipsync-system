@@ -1,7 +1,0 @@
-{
-  "name": "wav2lip_baseline",
-  "backend": "wav2lip",
-  "repository": "../external/Wav2Lip",
-  "python": "../external/Wav2Lip/.venv/Scripts/python.exe",
-  "checkpoint": "../checkpoints/wav2lip.pth"
-}
