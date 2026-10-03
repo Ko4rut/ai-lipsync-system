@@ -243,68 +243,27 @@ def _extract_zenodo_audio_for_speaker(
 # Face detection bootstrap
 # ---------------------------------------------------------------------------
 
-#: Expected location of the S3FD weights inside the repository / install.
-S3FD_WEIGHTS_FILENAME = "s3fd.pth"
-S3FD_WEIGHTS_SUBPATH = "face_detection/detection/sfd/s3fd.pth"
-
-#: Canonical download URL for S3FD weights (used by the original Wav2Lip repo).
-S3FD_WEIGHTS_URL = (
-    "https://www.adrianbulat.com/downloads/python-fan/s3fd-619a316812.pth"
-)
-
-
-def _find_repo_root() -> Path:
-    """Heuristically find the repository root (containing pyproject.toml)."""
-    here = Path(__file__).resolve()
-    for parent in [here, *here.parents]:
-        if (parent / "pyproject.toml").exists():
-            return parent
-    return here.parent.parent.parent  # best guess
-
-
-def get_s3fd_weights_path() -> Path:
-    """Return the expected path for S3FD weights within this repository."""
-    return _find_repo_root() / S3FD_WEIGHTS_SUBPATH
-
-
 def ensure_face_detection_available() -> None:
-    """Check that face_detection is importable and S3FD weights exist.
-
-    If weights are missing, downloads them.
-    Raises :class:`.FaceDetectionSetupError` on failure.
-    """
-    # 1. Check importability
+    """Check that the supported ``face_alignment`` S3FD API is available."""
     try:
-        import face_detection  # type: ignore[import-untyped]
+        from face_alignment.detection.sfd import FaceDetector  # noqa: F401
     except ImportError as exc:
         raise FaceDetectionSetupError(
-            "The 'face_detection' package (Wav2Lip S3FD implementation) is not installed. "
-            "Run: pip install face-alignment  "
-            "or ensure the Wav2Lip face_detection directory is on PYTHONPATH.\n"
+            "The supported S3FD detector is not installed. "
+            "Run: pip install -r requirements.txt\n"
             f"Original error: {exc}"
         ) from exc
 
-    # 2. Check weights
-    weights_path = get_s3fd_weights_path()
-    if not weights_path.exists():
-        logger.info("S3FD weights not found at %s; downloading…", weights_path)
-        weights_path.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            import requests  # noqa: PLC0415
-            resp = requests.get(S3FD_WEIGHTS_URL, stream=True, timeout=(30, 120))
-            if resp.status_code != 200:
-                raise FaceDetectionSetupError(
-                    f"Failed to download S3FD weights (HTTP {resp.status_code}): {S3FD_WEIGHTS_URL}"
-                )
-            with weights_path.open("wb") as fh:
-                for chunk in resp.iter_content(chunk_size=1024 * 1024):
-                    if chunk:
-                        fh.write(chunk)
-            logger.info("Downloaded S3FD weights to %s", weights_path)
-        except Exception as exc:
-            raise FaceDetectionSetupError(
-                f"Could not download S3FD weights from {S3FD_WEIGHTS_URL}: {exc}"
-            ) from exc
+
+class _SFDDetectorAdapter:
+    """Expose the batch API expected by the preprocessing loop."""
+
+    def __init__(self, detector) -> None:
+        self._detector = detector
+
+    def get_detections_for_batch(self, images: np.ndarray):
+        detections = self._detector.detect_from_batch(images)
+        return [faces[0] if len(faces) else None for faces in detections]
 
 
 def _build_face_detector(config: PipelineConfig):  # type: ignore[return]
@@ -313,24 +272,17 @@ def _build_face_detector(config: PipelineConfig):  # type: ignore[return]
     Returns ``(detector, device_str)``.
     Raises :class:`.FaceDetectionSetupError` if setup fails.
     """
-    import face_detection  # type: ignore[import-untyped]
+    from face_alignment.detection.sfd import FaceDetector
+
     try:
         import torch
         device = "cuda" if torch.cuda.is_available() else "cpu"
     except ImportError:
         device = "cpu"
 
-    weights_path = get_s3fd_weights_path()
-    if not weights_path.exists():
-        raise FaceDetectionSetupError(
-            f"S3FD weights not found: {weights_path}. Run ensure_face_detection_available()."
-        )
-
     try:
-        detector = face_detection.FaceAlignment(
-            face_detection.LandmarksType._2D,
-            flip_input=False,
-            device=device,
+        detector = _SFDDetectorAdapter(
+            FaceDetector(device=device, verbose=False)
         )
     except Exception as exc:
         raise FaceDetectionSetupError(
