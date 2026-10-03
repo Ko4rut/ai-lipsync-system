@@ -477,7 +477,10 @@ def process_audio_utterance(
         logger.debug("[%s] ffprobe failed: %s", utterance_id, exc)
 
     # Convert
-    tmp_out = output_path.with_suffix(".wav.tmp")
+    # Keep ``.wav`` as the final suffix so ffmpeg can infer the output
+    # container.  ``audio.wav.tmp`` ends in ``.tmp`` and makes ffmpeg fail
+    # with "Unable to find a suitable output format".
+    tmp_out = output_path.with_name(f"{output_path.stem}.tmp{output_path.suffix}")
     try:
         cmd = [
             "ffmpeg", "-y",
@@ -490,7 +493,7 @@ def process_audio_utterance(
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         if proc.returncode != 0:
             result.invalid_reason = "AUDIO_CONVERSION_FAILED"
-            logger.debug("[%s] ffmpeg stderr: %s", utterance_id, proc.stderr[-500:])
+            logger.warning("[%s] ffmpeg conversion failed: %s", utterance_id, proc.stderr[-500:])
             return result
 
         if not tmp_out.exists() or tmp_out.stat().st_size == 0:

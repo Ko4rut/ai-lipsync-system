@@ -22,6 +22,7 @@ import os
 import sys
 import tarfile
 import tempfile
+from types import SimpleNamespace
 from pathlib import Path
 from typing import Dict, List
 from unittest.mock import MagicMock, patch
@@ -56,6 +57,43 @@ def test_modules_importable_outside_colab() -> None:
 
     assert "PipelineConfig" in pkg_all
     assert "compute_speaker_split" in pkg_all
+
+
+def test_audio_conversion_temp_file_keeps_wav_suffix(tmp_path: Path) -> None:
+    """ffmpeg must receive a .wav output path so it can select the WAV muxer."""
+    from data.config import PipelineConfig
+    from data.preprocess import process_audio_utterance
+
+    source = tmp_path / "input.wav"
+    output = tmp_path / "audio.wav"
+    source.write_bytes(b"fake input")
+    commands: List[List[str]] = []
+
+    def fake_run(command, **kwargs):
+        commands.append(command)
+        if command[0] == "ffmpeg":
+            Path(command[-1]).write_bytes(b"RIFF" + b"\x00" * 40)
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+        return SimpleNamespace(
+            returncode=0,
+            stdout="16000\n1\n1.0\n",
+            stderr="",
+        )
+
+    config = PipelineConfig(workspace_root=tmp_path)
+    with patch("data.preprocess.subprocess.run", side_effect=fake_run):
+        result = process_audio_utterance(
+            "test-utterance",
+            audio_path=source,
+            output_path=output,
+            config=config,
+        )
+
+    ffmpeg_command = next(command for command in commands if command[0] == "ffmpeg")
+    assert ffmpeg_command[-1].endswith(".wav")
+    assert ffmpeg_command[-1].endswith("audio.tmp.wav")
+    assert result.success
+    assert output.exists()
 
 
 # ---------------------------------------------------------------------------

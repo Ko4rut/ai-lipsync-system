@@ -187,7 +187,8 @@ def init_workspace(config: PipelineConfig) -> None:
         config.cache_dir,
         config.temp_dir,
     )
-    logger.debug("Workspace ready: %s", config.workspace_root)
+    logger.info("Transient Colab workspace: %s", config.workspace_root)
+    logger.info("Persistent Google Drive root: %s", config.drive_root)
 
 
 def init_drive_dirs(config: PipelineConfig) -> None:
