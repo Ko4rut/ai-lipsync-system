@@ -96,6 +96,31 @@ def test_audio_conversion_temp_file_keeps_wav_suffix(tmp_path: Path) -> None:
     assert output.exists()
 
 
+def test_sfd_adapter_converts_numpy_nhwc_to_torch_nchw() -> None:
+    """The face-alignment SFD API requires a PyTorch NCHW batch."""
+    import numpy as np
+    import torch
+
+    from data.preprocess import _SFDDetectorAdapter
+
+    class FakeSFDDetector:
+        received = None
+
+        def detect_from_batch(self, images):
+            self.received = images
+            return [np.array([[1.0, 2.0, 30.0, 40.0, 0.99]])]
+
+    fake = FakeSFDDetector()
+    adapter = _SFDDetectorAdapter(fake)
+    result = adapter.get_detections_for_batch(
+        np.zeros((1, 48, 64, 3), dtype=np.uint8)
+    )
+
+    assert isinstance(fake.received, torch.Tensor)
+    assert tuple(fake.received.shape) == (1, 3, 48, 64)
+    assert result[0].tolist() == [1.0, 2.0, 30.0, 40.0]
+
+
 # ---------------------------------------------------------------------------
 # Test 1: speaker list
 # ---------------------------------------------------------------------------

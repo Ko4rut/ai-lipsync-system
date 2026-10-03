@@ -262,8 +262,22 @@ class _SFDDetectorAdapter:
         self._detector = detector
 
     def get_detections_for_batch(self, images: np.ndarray):
-        detections = self._detector.detect_from_batch(images)
-        return [faces[0] if len(faces) else None for faces in detections]
+        import torch
+
+        # ``process_video_utterance`` supplies an RGB uint8 NumPy batch in
+        # NHWC layout.  face-alignment 1.4.1's SFD detector expects a PyTorch
+        # tensor in NCHW layout; passing NumPy through directly makes every
+        # batch fail at ``img_batch.size(0)``.
+        tensor = torch.from_numpy(images.transpose(0, 3, 1, 2).copy())
+        detections = self._detector.detect_from_batch(tensor)
+
+        results = []
+        for faces in detections:
+            if len(faces) == 0:
+                results.append(None)
+                continue
+            results.append(np.clip(faces[0], 0, None)[:4])
+        return results
 
 
 def _build_face_detector(config: PipelineConfig):  # type: ignore[return]
@@ -379,7 +393,7 @@ def process_video_utterance(
                     np.array(batch_frames_rgb)
                 )
             except Exception as exc:
-                logger.debug(
+                logger.warning(
                     "[%s] Face detection batch failed: %s", utterance_id, exc
                 )
                 result.failed_frames += len(batch)
