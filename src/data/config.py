@@ -157,7 +157,8 @@ SPLIT_TEST_COUNT: int = 3
 
 #: Default Google Drive root for this project (Colab).
 DEFAULT_DRIVE_ROOT: str = (
-    "/content/drive/MyDrive/2026-2027/coding/pattern_recognition/20261002_grid_dataset"
+    # "/content/drive/MyDrive/2026-2027/coding/pattern_recognition/20261002_grid_dataset" # Đường dẫn drive của Tùng Thiện
+    "/content/drive/MyDrive/20261002_grid_dataset" # Đường dẫn drive của các bạn khác
 )
 
 #: Default transient Colab local workspace root.
