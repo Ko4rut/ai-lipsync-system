@@ -576,19 +576,25 @@ def run_pipeline(config: PipelineConfig, speakers: List[str], *, resume: bool) -
     downloader = SpeakerDownloader(config)
 
     for speaker_id in speakers:
-        # Resume: skip DONE speakers unless --force
-        if not config.force and state.is_done(speaker_id):
-            # Verify persistent artefacts actually exist
+        # Resume: skip verified artifacts unless --force, even if an earlier
+        # interrupted attempt changed the state away from DONE.
+        if not config.force:
             if state.verify_done_artefacts(
                 speaker_id,
                 silver_shards_dir=config.silver_shards_dir,
                 silver_metadata_dir=config.silver_metadata_dir,
             ):
-                logger.info("[%s] Already DONE and artefacts verified; skipping.", speaker_id)
+                state.record_existing_done(
+                    speaker_id,
+                    shard_path=config.silver_shards_dir / f"{speaker_id}.tar",
+                    metadata_path=config.silver_metadata_dir / f"{speaker_id}.json",
+                )
+                logger.info("[%s] Existing shard and metadata verified; skipping.", speaker_id)
                 continue
-            else:
+            if state.is_done(speaker_id):
                 logger.warning(
-                    "[%s] Marked DONE but artefacts missing; will reprocess.", speaker_id
+                    "[%s] Marked DONE but artefacts are missing or invalid; will reprocess.",
+                    speaker_id,
                 )
 
         logger.info("=" * 60)

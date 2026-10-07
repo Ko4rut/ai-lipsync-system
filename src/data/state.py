@@ -202,21 +202,23 @@ class StateManager:
         silver_shards_dir: Path,
         silver_metadata_dir: Path,
     ) -> bool:
-        """Return True iff the persistent artefacts declared for a DONE
-        speaker actually exist on disk with matching SHA-256."""
-        if not self.is_done(speaker_id):
-            return False
+        """Return True iff this speaker's persistent artefacts verify on disk.
+
+        Resolve artifacts from the configured dataset root rather than the
+        absolute paths stored in state, which may point to a previous Drive
+        shortcut or mount location.
+        """
         spk = self._speaker(speaker_id)
-        shard_path = Path(spk.get("shard_path") or "")
-        meta_path = Path(spk.get("metadata_path") or "")
+        shard_path = silver_shards_dir / f"{speaker_id}.tar"
+        meta_path = silver_metadata_dir / f"{speaker_id}.json"
         expected_sha = spk.get("shard_sha256") or ""
         expected_size = spk.get("shard_size_bytes")
 
         if not shard_path.exists():
-            logger.warning("[%s] DONE but shard missing: %s", speaker_id, shard_path)
+            logger.warning("[%s] Shard missing: %s", speaker_id, shard_path)
             return False
         if not meta_path.exists():
-            logger.warning("[%s] DONE but metadata missing: %s", speaker_id, meta_path)
+            logger.warning("[%s] Metadata missing: %s", speaker_id, meta_path)
             return False
         if expected_size is not None and shard_path.stat().st_size != expected_size:
             logger.warning("[%s] Shard size mismatch (expected %s, got %s)",
@@ -228,3 +230,26 @@ class StateManager:
                 logger.warning("[%s] Shard SHA-256 mismatch", speaker_id)
                 return False
         return True
+
+    def record_existing_done(
+        self,
+        speaker_id: str,
+        *,
+        shard_path: Path,
+        metadata_path: Path,
+    ) -> None:
+        """Reconcile state with already-verified artifacts without reprocessing."""
+        spk = self._speaker(speaker_id)
+        updates = {
+            "status": SpeakerStatus.DONE,
+            "shard_path": str(shard_path),
+            "metadata_path": str(metadata_path),
+            "completed_at": spk.get("completed_at") or _now_iso(),
+            "last_error": None,
+        }
+        changed = any(spk.get(key) != value for key, value in updates.items())
+        if not changed:
+            return
+        spk.update(updates)
+        logger.info("[%s] Verified existing artifacts; state reconciled to DONE.", speaker_id)
+        self._save()

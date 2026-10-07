@@ -293,6 +293,60 @@ def test_state_manager_skips_done_speaker(tmp_path: Path) -> None:
     )
 
 
+def test_state_manager_recovers_verified_artifacts_after_drive_path_changes(
+    tmp_path: Path,
+) -> None:
+    """Relocated artifacts should be skipped and a stale interrupted state repaired."""
+    from data.config import USABLE_SPEAKERS, SpeakerStatus
+    from data.state import StateManager
+
+    state_file = tmp_path / "state" / "processing_state.json"
+    sm = StateManager(state_file=state_file, usable_speakers=USABLE_SPEAKERS)
+
+    old_shard = tmp_path / "old-drive" / "silver" / "shards" / "s1.tar"
+    old_metadata = tmp_path / "old-drive" / "silver" / "metadata" / "s1.json"
+    old_shard.parent.mkdir(parents=True)
+    old_metadata.parent.mkdir(parents=True)
+    old_shard.write_bytes(b"completed shard")
+    old_metadata.write_text("{}", encoding="utf-8")
+
+    import hashlib
+    shard_sha = hashlib.sha256(b"completed shard").hexdigest()
+    sm.record_done(
+        "s1",
+        shard_path=str(old_shard),
+        metadata_path=str(old_metadata),
+        shard_size_bytes=old_shard.stat().st_size,
+        shard_sha256=shard_sha,
+        video_source_used="primary",
+        audio_source_used="primary",
+    )
+    sm.transition("s1", SpeakerStatus.DOWNLOADING)
+
+    current_shards = tmp_path / "shortcut" / "silver" / "shards"
+    current_metadata = tmp_path / "shortcut" / "silver" / "metadata"
+    current_shards.mkdir(parents=True)
+    current_metadata.mkdir(parents=True)
+    (current_shards / "s1.tar").write_bytes(b"completed shard")
+    (current_metadata / "s1.json").write_text("{}", encoding="utf-8")
+
+    assert sm.verify_done_artefacts(
+        "s1",
+        silver_shards_dir=current_shards,
+        silver_metadata_dir=current_metadata,
+    )
+
+    sm.record_existing_done(
+        "s1",
+        shard_path=current_shards / "s1.tar",
+        metadata_path=current_metadata / "s1.json",
+    )
+    info = sm.get_speaker_info("s1")
+    assert info["status"] == SpeakerStatus.DONE
+    assert info["shard_path"] == str(current_shards / "s1.tar")
+    assert info["metadata_path"] == str(current_metadata / "s1.json")
+
+
 def test_state_manager_retries_failed_speaker(tmp_path: Path) -> None:
     """A speaker marked FAILED should be scheduled for retry."""
     from data.state import StateManager
