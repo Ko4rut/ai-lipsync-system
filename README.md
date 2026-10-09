@@ -12,9 +12,19 @@ Tài liệu yêu cầu gốc nằm tại
 
 ```text
 src/
-  data/                     Thu thập và chuẩn bị dữ liệu nghiên cứu
-    pipeline.py             Crawl, Bronze, Silver, Gold và điều phối dataset
-  lipsync/                  Thuật toán và thí nghiệm lip-sync
+  data/                     Pipeline tiền xử lý GRID Corpus (Medallion-lite, Colab-ready)
+    README.md               Tài liệu hướng dẫn chi tiết & kiến trúc data pipeline
+    pipeline.py             Orchestrator điều phối toàn bộ luồng & CLI
+    downloader.py           Tải dữ liệu Sheffield / Zenodo fallback, HTTP range resume
+    preprocess.py           Bóc frame, S3FD face crop, chuẩn hóa audio 16kHz mono
+    qc.py                   Kiểm định chất lượng utterance, lọc lỗi
+    shard.py                Đóng gói Silver uncompressed TAR & upload an toàn lên Drive
+    split.py                Phân chia Gold speaker-disjoint (27/3/3) & tạo manifest
+    state.py                Quản lý trạng thái và cơ chế resume đa phiên
+    config.py               Cấu hình hằng số, ngưỡng và đường dẫn tập trung
+    exceptions.py           Các ngoại lệ nghiệp vụ chuẩn hóa
+    utils.py                Tiện ích atomic JSON, SHA-256, chuỗi frame liên tiếp
+  lipsync/                  Thuật toán và thí nghiệm lip-sync (Placeholder)
     __main__.py             Entry point dự kiến của ứng dụng
     config.py               Cấu hình ứng dụng và thí nghiệm
     pipeline.py             Điều phối pipeline tổng
@@ -24,9 +34,8 @@ src/
     evaluation/             Đánh giá kết quả
 ```
 
-Các module hiện chỉ có docstring và `pass`. Chúng là placeholder để thống nhất
-trách nhiệm trước khi chọn dataset, baseline và mô hình. Chỉ triển khai thêm
-logic khi bước nghiên cứu tương ứng bắt đầu.
+> **Chi tiết về Data Pipeline:** Xem tài liệu đầy đủ tại [`src/data/README.md`](src/data/README.md).
+> Module `lipsync/` hiện là skeleton phục vụ giai đoạn mô hình tiếp theo.
 
 ## Tổ chức dữ liệu
 

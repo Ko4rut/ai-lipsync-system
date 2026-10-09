@@ -1,0 +1,10 @@
+# Runtime dependencies for the GRID data pipeline (src/data).
+# Google Colab already provides a CUDA-compatible PyTorch build; the lower
+# bound below lets pip reuse it instead of forcing a different build.
+
+face-alignment==1.4.1
+numpy>=1.24,<3
+opencv-python>=4.8,<5
+requests>=2.31,<3
+torch>=2.0
+tqdm>=4.66,<5

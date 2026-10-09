@@ -1,11 +1,18 @@
-"""Planning package for dataset collection and preparation."""
+"""Data pipeline package for the GRID Audio-Visual Speech Corpus.
 
-from .pipeline import BronzeStage, DataCrawler, DatasetPipeline, GoldStage, SilverStage
+Public surface kept minimal; import from submodules directly for internal use.
+"""
+
+from .config import PipelineConfig, USABLE_SPEAKERS, EXCLUDED_SPEAKERS
+from .exceptions import GRIDPipelineError
+from .state import StateManager
+from .split import compute_speaker_split
 
 __all__ = [
-    "BronzeStage",
-    "DataCrawler",
-    "DatasetPipeline",
-    "GoldStage",
-    "SilverStage",
+    "PipelineConfig",
+    "USABLE_SPEAKERS",
+    "EXCLUDED_SPEAKERS",
+    "GRIDPipelineError",
+    "StateManager",
+    "compute_speaker_split",
 ]
