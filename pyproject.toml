@@ -15,3 +15,9 @@ lipsync = "lipsync.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+markers = [
+    "integration: tests that read the real dataset when configured",
+]
