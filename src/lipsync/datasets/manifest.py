@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
 from typing import Iterator
-from error_exception import ManifestError
+from .error_exception import ManifestError
 
 SPLITS = frozenset({"train", "val", "test"})
 FIELDS = frozenset({
