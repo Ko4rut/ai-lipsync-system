@@ -4,11 +4,15 @@ The source code lives in `src/lipsync/datasets/` and the project can be invoked 
 
 ## Dependencies
 
+Install all declared dependencies from the repository root and install the package in editable mode:
+
 ```powershell
-python -m pip install pytest numpy opencv-python python-dotenv
-# Only for listening to audio:
-python -m pip install sounddevice
+python -m pip install -r requirements.txt
+python -m pip install -e .
+Copy-Item .env.example .env
 ```
+
+Edit `.env` with your own `LIPSYNC_DATA_ROOT` path. The single requirements file also includes the larger GRID preprocessing dependencies such as PyTorch and face-alignment. `sounddevice` is used only for audio preview, but is included in requirements to make the demos work after one setup step.
 
 Configure `LIPSYNC_DATA_ROOT` in a project-root `.env` file, or pass `--root "PATH_TO_GRID_DATASET"`. The root directory must contain `gold/` and `silver/shards/`. Do not commit `.env`.
 
