@@ -10,8 +10,8 @@ import cv2
 import numpy as np
 
 from .manifest import GoldManifestIndex, ManifestRecord
-from .shard_reader import DatasetReadError, GridShardReader
-
+from .error_exception import DatasetReadError
+from .shard_reader import GridShardReader
 
 @dataclass
 class GridSample:

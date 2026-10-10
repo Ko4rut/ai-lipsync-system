@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
 from typing import Iterator
+from error_exception import ManifestError
 
 SPLITS = frozenset({"train", "val", "test"})
 FIELDS = frozenset({
@@ -16,11 +17,6 @@ FIELDS = frozenset({
 })
 _SPEAKER = re.compile(r"s[1-9][0-9]*\Z")
 _UTTERANCE = re.compile(r"[A-Za-z0-9_-]+\Z")
-
-
-class ManifestError(ValueError):
-    """Invalid or inconsistent Gold manifest."""
-
 
 @dataclass(frozen=True)
 class ManifestRecord:

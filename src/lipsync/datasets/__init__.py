@@ -1,9 +1,17 @@
 """Data access for processed GRID artifacts. Model-independent raw samples."""
-from .grid_dataset import GridSample, GridUtteranceDataset
 from .manifest import GoldManifestIndex, ManifestError, ManifestRecord
-from .shard_reader import DatasetReadError, GridShardReader
-
+from .error_exception import (
+    DatasetError,
+    ManifestError,
+    DatasetReadError,
+)
+from .manifest import (
+    GoldManifestIndex,
+    ManifestRecord,
+)
+from .shard_reader import GridShardReader
+from .grid_dataset import GridSample, GridUtteranceDataset
 __all__ = [
     "GridSample", "GridUtteranceDataset", "GoldManifestIndex",
-    "ManifestError", "ManifestRecord", "DatasetReadError", "GridShardReader",
+    "ManifestError", "ManifestRecord", "DatasetReadError", "GridShardReader","DatasetError"
 ]

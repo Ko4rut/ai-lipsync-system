@@ -10,11 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .manifest import ManifestRecord
-
-
-class DatasetReadError(RuntimeError):
-    """Missing or unreadable GRID media."""
-
+from .error_exception import DatasetReadError
 
 @dataclass
 class _OpenShard:
