@@ -245,8 +245,8 @@ def test_missing_required_columns(tmp_path, valid_row):
     )
 
     with pytest.raises(
-    ManifestError,
-    match="audio_sample_rate",
+        ManifestError,
+        match="audio_sample_rate",
     ):
         GoldManifestIndex(
             root=tmp_path,
@@ -290,3 +290,28 @@ def test_empty_manifest_with_header(tmp_path):
     )
 
     assert len(manifest) == 0
+
+
+# ============================================================
+# 4. PACKAGE / EXCEPTION TESTS
+# ============================================================
+
+def test_manifest_exception_exports_have_same_identity():
+    """Direct and package imports must refer to the same exception class."""
+    from src.lipsync.datasets import DatasetError, ManifestError as PublicManifestError
+    from src.lipsync.datasets.error_exception import ManifestError as SharedManifestError
+
+    assert PublicManifestError is ManifestError
+    assert SharedManifestError is ManifestError
+    assert issubclass(ManifestError, DatasetError)
+    assert issubclass(ManifestError, ValueError)
+
+
+def test_invalid_record_raises_shared_manifest_error(valid_row):
+    """Parser raises the exported exception, not an unrelated duplicate class."""
+    from src.lipsync.datasets import ManifestError as PublicManifestError
+
+    valid_row["speaker_id"] = "invalid speaker"
+
+    with pytest.raises(PublicManifestError):
+        _record(valid_row, 2, "train")
