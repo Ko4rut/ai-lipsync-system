@@ -1,70 +1,70 @@
+"""Integration checks against real GRID Gold CSVs when configured.
+
+Set LIPSYNC_DATA_ROOT as an environment variable or put it in the repo .env.
+No heavy Silver TARs are opened by this test.
+"""
+from __future__ import annotations
 
 import os
 from pathlib import Path
 
 import pytest
 
-from src.lipsync.datasets.manifest import GoldManifestIndex
+from src.lipsync.datasets import GoldManifestIndex
 
 
-def test_load_real_gold_manifests():
-    """Kiểm tra GoldManifestIndex với dataset thực tế."""
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-    # STEP 1: Lấy đường dẫn dataset từ environment
-    dataset_path = os.getenv("LIPSYNC_DATA_ROOT")
 
-    if not dataset_path:
-        pytest.skip("GRID_DATASET_ROOT is not configured")
+def _dataset_root() -> Path:
+    """Explicit environment variables take precedence over the optional .env."""
+    configured = os.getenv("LIPSYNC_DATA_ROOT")
 
-    dataset_root = Path(dataset_path)
+    if not configured:
+        try:
+            from dotenv import dotenv_values
+        except ImportError:
+            pytest.skip(
+                "Set LIPSYNC_DATA_ROOT or install python-dotenv to read the project .env"
+            )
+        configured = dotenv_values(PROJECT_ROOT / ".env").get("LIPSYNC_DATA_ROOT")
 
-    # STEP 2: Khai báo các split cần kiểm tra
-    splits = ["train", "val", "test"]
+    if not configured:
+        pytest.skip("LIPSYNC_DATA_ROOT is not configured (environment or .env)")
 
-    speakers_by_split = {}
+    root = Path(configured).expanduser()
+    if not root.is_dir():
+        pytest.fail(f"Configured LIPSYNC_DATA_ROOT does not exist: {root}")
+    return root
 
-    # STEP 3: Đọc từng Gold Manifest
-    for split in splits:
 
-        manifest = GoldManifestIndex(
-            root=dataset_root,
-            split=split
-        )
+@pytest.mark.integration
+def test_load_real_gold_manifests() -> None:
+    """Read actual Gold manifests and check speaker-disjoint splits."""
+    root = _dataset_root()
+    speakers_by_split: dict[str, set[str]] = {}
 
-        # Kiểm tra có dữ liệu
-        assert len(manifest) > 0
+    for split in ("train", "val", "test"):
+        manifest = GoldManifestIndex(root=root, split=split)
+        assert len(manifest) > 0, f"{split} manifest has no utterances"
 
-        print(f"\n===== {split.upper()} =====")
+        print(f"\\n===== {split.upper()} =====")
         print(f"Total utterances: {len(manifest)}")
 
-        # In thử 3 record đầu tiên
         for index in range(min(3, len(manifest))):
             record = manifest[index]
-
             print(
                 f"Speaker: {record.speaker_id} | "
                 f"Utterance: {record.utterance_id} | "
                 f"Frames: {record.frame_count}"
             )
 
-        # Kiểm tra speaker trong mỗi split
-        speakers = set()
-
+        speakers: set[str] = set()
         for record in manifest:
             assert record.split == split
             speakers.add(record.speaker_id)
-
         speakers_by_split[split] = speakers
 
-    # STEP 4: Kiểm tra speaker không bị trùng giữa các split
-    assert speakers_by_split["train"].isdisjoint(
-        speakers_by_split["val"]
-    )
-
-    assert speakers_by_split["train"].isdisjoint(
-        speakers_by_split["test"]
-    )
-
-    assert speakers_by_split["val"].isdisjoint(
-        speakers_by_split["test"]
-    )
+    assert speakers_by_split["train"].isdisjoint(speakers_by_split["val"])
+    assert speakers_by_split["train"].isdisjoint(speakers_by_split["test"])
+    assert speakers_by_split["val"].isdisjoint(speakers_by_split["test"])
