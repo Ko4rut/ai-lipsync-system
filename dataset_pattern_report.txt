@@ -1,0 +1,196 @@
+AI LipSync / GRID Dataset Structure Report
+==========================================
+Read-only; no media content read; no files modified; no TAR files opened.
+Absolute Google Drive path intentionally omitted from this report.
+Dataset folder: 20261002_grid_dataset
+
+[ROOT]
+  directories=4, files=2
+  [DIR]  gold/
+  [DIR]  logs/
+  [DIR]  silver/
+  [DIR]  state/
+  [FILE] alignments.zip (19.2 MiB)
+  [FILE] s1.zip (403.9 MiB)
+
+[BRONZE]
+  (not found)
+
+[SILVER]
+  directories=2, files=1
+  [DIR]  metadata/
+  [DIR]  shards/
+  [FILE] desktop.ini (352.0 B)
+
+[SILVER / shards]
+  directories=0, files=34
+  [FILE] desktop.ini (352.0 B)
+  [FILE] s1.tar (652.9 MiB)
+  [FILE] s10.tar (658.2 MiB)
+  [FILE] s11.tar (634.9 MiB)
+  [FILE] s12.tar (649.1 MiB)
+  [FILE] s13.tar (621.7 MiB)
+  [FILE] s14.tar (633.6 MiB)
+  [FILE] s15.tar (562.7 MiB)
+  [FILE] s16.tar (616.2 MiB)
+  [FILE] s17.tar (646.8 MiB)
+  [FILE] s18.tar (618.7 MiB)
+  [FILE] s19.tar (737.5 MiB)
+  ... and 22 more entries (names omitted)
+
+[SILVER / metadata]
+  directories=0, files=34
+  [FILE] desktop.ini (352.0 B)
+  [FILE] s1.json (1.3 MiB)
+  [FILE] s10.json (1.3 MiB)
+  [FILE] s11.json (1.3 MiB)
+  [FILE] s12.json (1.3 MiB)
+  [FILE] s13.json (1.3 MiB)
+  [FILE] s14.json (1.3 MiB)
+  [FILE] s15.json (1.3 MiB)
+  [FILE] s16.json (1.3 MiB)
+  [FILE] s17.json (1.3 MiB)
+  [FILE] s18.json (1.3 MiB)
+  [FILE] s19.json (1.3 MiB)
+  ... and 22 more entries (names omitted)
+
+[GOLD]
+  directories=0, files=5
+  [FILE] desktop.ini (352.0 B)
+  [FILE] split_metadata.json (790.0 B)
+  [FILE] test_manifest.csv (435.0 KiB)
+  [FILE] train_manifest.csv (3.9 MiB)
+  [FILE] val_manifest.csv (405.4 KiB)
+
+[STATE]
+  directories=0, files=166
+  [FILE] desktop.ini (352.0 B)
+  [FILE] processing_state (1) (1).json (18.3 KiB)
+  [FILE] processing_state (1).json (19.9 KiB)
+  [FILE] processing_state (10).json (19.9 KiB)
+  [FILE] processing_state (100).json (18.9 KiB)
+  [FILE] processing_state (101).json (18.9 KiB)
+  [FILE] processing_state (102).json (18.9 KiB)
+  [FILE] processing_state (103).json (18.9 KiB)
+  [FILE] processing_state (104).json (18.9 KiB)
+  [FILE] processing_state (105).json (18.9 KiB)
+  [FILE] processing_state (106).json (18.9 KiB)
+  [FILE] processing_state (107).json (18.9 KiB)
+  ... and 154 more entries (names omitted)
+
+[LOGS]
+  directories=0, files=3
+  [FILE] desktop.ini (352.0 B)
+  [FILE] pipeline (1).log (445.7 KiB)
+  [FILE] pipeline.log (14.8 KiB)
+
+[SHARDS INVENTORY — NO TAR CONTENT READ]
+  TAR files: 33
+  Total TAR size (file metadata only): 21.5 GiB
+  s1.tar (652.9 MiB)
+  s10.tar (658.2 MiB)
+  s11.tar (634.9 MiB)
+  s12.tar (649.1 MiB)
+  s13.tar (621.7 MiB)
+  s14.tar (633.6 MiB)
+  s15.tar (562.7 MiB)
+  s16.tar (616.2 MiB)
+  s17.tar (646.8 MiB)
+  s18.tar (618.7 MiB)
+  s19.tar (737.5 MiB)
+  s2.tar (686.8 MiB)
+  s20.tar (640.9 MiB)
+  s22.tar (680.8 MiB)
+  s23.tar (689.5 MiB)
+  s24.tar (717.9 MiB)
+  s25.tar (705.3 MiB)
+  s26.tar (687.5 MiB)
+  s27.tar (729.5 MiB)
+  s28.tar (704.0 MiB)
+  s29.tar (731.9 MiB)
+  s3.tar (688.0 MiB)
+  s30.tar (717.8 MiB)
+  s31.tar (675.1 MiB)
+  s32.tar (623.7 MiB)
+  s33.tar (656.8 MiB)
+  s34.tar (772.8 MiB)
+  s4.tar (641.1 MiB)
+  s5.tar (704.8 MiB)
+  s6.tar (665.1 MiB)
+  s7.tar (605.5 MiB)
+  s8.tar (624.8 MiB)
+  s9.tar (664.9 MiB)
+
+[METADATA JSON SCHEMAS — FIRST TWO FILES]
+  Metadata JSON files: 33
+  File: s1.json
+  root keys: dataset, generated_at, invalid_reason_counts, processing, samples, schema_version, shard, source, speaker_id, status, summary
+  schema_version: 1.0.0
+  status: DONE
+  speaker_id: s1
+  summary keys: invalid_samples, total_candidates, valid_samples
+  summary numeric fields: {'total_candidates': 1000, 'valid_samples': 1000, 'invalid_samples': 0}
+  shard keys: path, sha256, size_bytes
+  shard numeric fields: {'size_bytes': 684636160}
+  invalid_reason_counts keys: 
+  samples count: 1000
+  first sample keys: audio_channels, audio_duration_sec, audio_sample_rate, cropped_frame_count, detected_frame_indices, face_detection_ratio, invalid_reason, max_consecutive_face_frames, shard_member_prefix, source_fps, source_frame_count, utterance_id, valid
+  first sample selected fields: {'utterance_id': 'bbaf2n', 'valid': True, 'cropped_frame_count': 75, 'face_detection_ratio': 1.0, 'audio_sample_rate': 16000, 'audio_duration_sec': 1.190063, 'shard_member_prefix': 's1/bbaf2n/'}
+  File: s10.json
+  root keys: dataset, generated_at, invalid_reason_counts, processing, samples, schema_version, shard, source, speaker_id, status, summary
+  schema_version: 1.0.0
+  status: DONE
+  speaker_id: s10
+  summary keys: invalid_samples, total_candidates, valid_samples
+  summary numeric fields: {'total_candidates': 1000, 'valid_samples': 1000, 'invalid_samples': 0}
+  shard keys: path, sha256, size_bytes
+  shard numeric fields: {'size_bytes': 690216960}
+  invalid_reason_counts keys: 
+  samples count: 1000
+  first sample keys: audio_channels, audio_duration_sec, audio_sample_rate, cropped_frame_count, detected_frame_indices, face_detection_ratio, invalid_reason, max_consecutive_face_frames, shard_member_prefix, source_fps, source_frame_count, utterance_id, valid
+  first sample selected fields: {'utterance_id': 'bbab8n', 'valid': True, 'cropped_frame_count': 75, 'face_detection_ratio': 1.0, 'audio_sample_rate': 16000, 'audio_duration_sec': 1.110062, 'shard_member_prefix': 's10/bbab8n/'}
+
+[GOLD MANIFESTS — CSV HEADERS AND TWO SAMPLE ROWS]
+  File: test_manifest.csv (435.0 KiB)
+  columns: split, speaker_id, utterance_id, shard_path, shard_member_prefix, frame_count, first_frame_index, last_frame_index, face_detection_ratio, audio_duration_sec, audio_sample_rate, valid
+  sample row 1: {'split': 'test', 'speaker_id': 's2', 'utterance_id': 'bbaf1n', 'frame_count': '75', 'first_frame_index': '0', 'last_frame_index': '74', 'audio_sample_rate': '16000', 'valid': 'True'}
+  sample row 2: {'split': 'test', 'speaker_id': 's2', 'utterance_id': 'bbaf2s', 'frame_count': '75', 'first_frame_index': '0', 'last_frame_index': '74', 'audio_sample_rate': '16000', 'valid': 'True'}
+  NOTE: total CSV rows not counted (avoids reading full file)
+  File: train_manifest.csv (3.9 MiB)
+  columns: split, speaker_id, utterance_id, shard_path, shard_member_prefix, frame_count, first_frame_index, last_frame_index, face_detection_ratio, audio_duration_sec, audio_sample_rate, valid
+  sample row 1: {'split': 'train', 'speaker_id': 's1', 'utterance_id': 'bbaf2n', 'frame_count': '75', 'first_frame_index': '0', 'last_frame_index': '74', 'audio_sample_rate': '16000', 'valid': 'True'}
+  sample row 2: {'split': 'train', 'speaker_id': 's1', 'utterance_id': 'bbaf3s', 'frame_count': '75', 'first_frame_index': '0', 'last_frame_index': '74', 'audio_sample_rate': '16000', 'valid': 'True'}
+  NOTE: total CSV rows not counted (avoids reading full file)
+  File: val_manifest.csv (405.4 KiB)
+  columns: split, speaker_id, utterance_id, shard_path, shard_member_prefix, frame_count, first_frame_index, last_frame_index, face_detection_ratio, audio_duration_sec, audio_sample_rate, valid
+  sample row 1: {'split': 'val', 'speaker_id': 's9', 'utterance_id': 'bbae4n', 'frame_count': '75', 'first_frame_index': '0', 'last_frame_index': '74', 'audio_sample_rate': '16000', 'valid': 'True'}
+  sample row 2: {'split': 'val', 'speaker_id': 's9', 'utterance_id': 'bbae5s', 'frame_count': '75', 'first_frame_index': '0', 'last_frame_index': '74', 'audio_sample_rate': '16000', 'valid': 'True'}
+  NOTE: total CSV rows not counted (avoids reading full file)
+
+[GOLD SPLIT METADATA]
+  root keys: excluded_speakers, generated_at, missing_speakers, partial, schema_version, seed, strategy, test_count, test_speakers, train_count, train_speakers, utterance_counts, val_count, val_speakers
+  schema_version: 1.0.0
+  strategy: speaker_disjoint
+  seed: 42
+  partial: False
+  utterance_counts keys: test, train, val
+  utterance_counts numeric fields: {'train': 27000, 'val': 3000, 'test': 2959}
+  train_speakers: count=27
+    ids: s29, s6, s12, s17, s28, s13, s22, s16, s11, s15, s20, s24, s10, s31, s26, s7, s27, s1, s33, s14, s19, s3, s18, s23, s4, s32, s5
+  val_speakers: count=3
+    ids: s30, s34, s9
+  test_speakers: count=3
+    ids: s25, s2, s8
+  missing_speakers: count=0
+    ids: 
+
+[PIPELINE STATE]
+  root keys: dataset, schema_version, speakers
+  schema_version: 1.0.0
+  speakers count: 33; statuses: {'DONE': 32, 'QC': 1}
+
+[NOTES]
+  No large media files were opened by this script.
+  TAR files were enumerated by filename and file size only.
+  Small metadata/manifest files may be downloaded/cached by Google Drive for desktop.
+  Actual data validity, audio/video contents, and model readiness are NOT verified.
