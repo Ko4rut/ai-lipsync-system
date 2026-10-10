@@ -36,3 +36,19 @@ Applies to the entire repository. Optimize for understandable, explicit Python, 
 - Real GRID integration tests use `LIPSYNC_DATA_ROOT`, skip when absent, and must not be described as passed without running them.
 - Run `python -m pytest tests/datasets/ -v`; where dependencies exist, run `python -m pytest tests/ -v`.
 - Keep edits limited to the requested branch. Do not merge or modify `main` unless explicitly requested.
+
+## Dependencies and environment configuration — mandatory
+
+Whenever an AI agent introduces, removes, upgrades, or changes how a third-party Python library is used:
+1. Update the repository-root `requirements.txt` in the **same change**, preserving necessary dependencies already used by other modules. Add a brief purpose comment where useful; avoid duplicated or unused packages.
+2. If installation also relies on `pyproject.toml`, keep documented installation commands and package metadata consistent. The current `pyproject.toml` does not install dependencies automatically; tell developers to use `python -m pip install -r requirements.txt` followed by `python -m pip install -e .`.
+3. Do not add a standard-library module to requirements; do not invent dependencies not used by source, tests, or a documented demo.
+4. If a dependency is only optional (for example, local media playback), explain when it is needed. If it is deliberately included in the consolidated requirements for one-command setup, document that choice.
+
+Whenever an AI agent introduces, removes, or renames an environment variable or changes its meaning:
+1. Update repository-root `.env.example` **in the same change**, keeping variable names and example formats synchronized with actual code and documentation.
+2. Use clearly fake placeholder values, never real credentials, personal Google Drive identifiers, local account names, or private machine paths.
+3. Do not commit `.env` or environment-specific secret files. Keep `.gitignore` configured to ignore them, while allowing `.env.example`.
+4. Update setup instructions when a new variable must be configured before running tests or demos.
+
+Before completing a code change, explicitly check whether `requirements.txt`, `.env.example`, `pyproject.toml`, documentation, or `.gitignore` must be updated. Do not claim installation, real-data integration, or preview playback was verified unless it was actually run.
