@@ -8,3 +8,11 @@ opencv-python>=4.8,<5
 requests>=2.31,<3
 torch>=2.0
 tqdm>=4.66,<5
+
+# Dataset loader, local demos, and integration-test support.
+# python-dotenv reads LIPSYNC_DATA_ROOT from the root .env file.
+python-dotenv>=1.0,<2
+# sounddevice plays decoded GRID WAV samples in --preview audio/both.
+sounddevice>=0.4.6,<1
+# pytest runs deterministic unit tests and optional real-dataset integration tests.
+pytest>=8,<10
