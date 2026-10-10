@@ -26,7 +26,7 @@ FIELDS = [
 def fixture_dataset(tmp_path: Path, *, corrupt_audio: bool = False, gap: bool = False) -> Path:
     gold = tmp_path / "gold"
     shards = tmp_path / "silver" / "shards"
-    gold.mkdir()
+    gold.mkdir(parents=True)
     shards.mkdir(parents=True)
     indices = (0, 1, 3) if gap else (0, 1, 2)
     frames = []
