@@ -11,7 +11,7 @@ import cv2
 import numpy as np
 import pytest
 
-from lipsync.datasets import (
+from src.lipsync.datasets import (
     DatasetReadError, GoldManifestIndex, GridUtteranceDataset, ManifestError,
 )
 
