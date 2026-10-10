@@ -81,41 +81,135 @@ def _record(row: dict[str, str], line: int, expected_split: str) -> ManifestReco
 
 
 class GoldManifestIndex:
-    """Load the Gold manifest once; each item identifies one utterance.
+    """
+    Đọc và quản lý danh sách utterance từ Gold Manifest.
 
-    Original shard_path is kept for provenance but never used as a filesystem
-    location: shards are resolved relative to the supplied dataset root.
+    Trách nhiệm:
+    1. Xác định đường dẫn đến manifest CSV.
+    2. Đọc dữ liệu từ CSV.
+    3. Kiểm tra cấu trúc và tính hợp lệ.
+    4. Chuyển từng dòng thành ManifestRecord.
+    5. Cho phép truy cập các record theo index.
     """
 
     def __init__(self, root: str | Path, split: str) -> None:
-        if split not in SPLITS:
-            raise ValueError(f"split must be one of {sorted(SPLITS)}")
-        self.root = Path(root).expanduser().resolve()
-        self.split = split
-        self.path = self.root / "gold" / f"{split}_manifest.csv"
-        try:
-            with self.path.open(newline="", encoding="utf-8-sig") as handle:
-                reader = csv.DictReader(handle)
-                if not reader.fieldnames or not FIELDS.issubset(reader.fieldnames):
-                    missing = sorted(FIELDS - set(reader.fieldnames or []))
-                    raise ManifestError(f"{self.path}: missing columns: {missing}")
-                records = [_record(row, line, split) for line, row in enumerate(reader, 2)]
-        except OSError as exc:
-            raise ManifestError(f"Cannot read manifest {self.path}: {exc}") from exc
 
+        # STEP 1: Kiểm tra split có hợp lệ hay không
+        if split not in SPLITS:
+            raise ValueError(
+                f"Invalid split: {split}. "
+                f"Expected one of: {sorted(SPLITS)}"
+            )
+
+        # STEP 2: Xác định thư mục gốc của dataset
+        self.root = Path(root)
+        self.root = self.root.expanduser()
+        self.root = self.root.resolve()
+
+        # Lưu tên split
+        self.split = split
+
+        # STEP 3: Xây dựng đường dẫn đến manifest
+        manifest_filename = f"{split}_manifest.csv"
+        gold_directory = self.root / "gold"
+
+        self.path = gold_directory / manifest_filename
+
+        # STEP 4: Khởi tạo danh sách chứa record
+        records: list[ManifestRecord] = []
+
+        # STEP 5: Đọc file CSV
+        try:
+            with self.path.open(
+                mode="r",
+                newline="",
+                encoding="utf-8-sig"
+            ) as file:
+
+                reader = csv.DictReader(file)
+
+                # STEP 6: Lấy danh sách tên cột
+                column_names = reader.fieldnames
+
+                if column_names is None:
+                    raise ManifestError(
+                        "Manifest CSV is empty or has no header"
+                    )
+
+                # STEP 7: Kiểm tra các cột bắt buộc
+                available_fields = set(column_names)
+
+                missing_fields = FIELDS.difference(
+                    available_fields
+                )
+
+                if len(missing_fields) > 0:
+                    raise ManifestError(
+                        f"Missing required columns: "
+                        f"{sorted(missing_fields)}"
+                    )
+
+                # STEP 8: Đọc từng dòng dữ liệu
+                line_number = 2
+
+                for row in reader:
+
+                    # Chuyển dòng CSV thành ManifestRecord
+                    record = _record(
+                        row=row,
+                        line=line_number,
+                        expected_split=split
+                    )
+
+                    # Thêm record vào danh sách
+                    records.append(record)
+
+                    line_number += 1
+
+        except OSError as error:
+            raise ManifestError(
+                f"Cannot read manifest: {self.path}. "
+                f"Reason: {error}"
+            ) from error
+
+        # STEP 9: Kiểm tra utterance bị trùng lặp
         seen: set[tuple[str, str]] = set()
-        for entry in records:
-            key = (entry.speaker_id, entry.utterance_id)
-            if key in seen:
-                raise ManifestError(f"Duplicate utterance in {self.path}: {key}")
-            seen.add(key)
+
+        for record in records:
+
+            speaker_id = record.speaker_id
+            utterance_id = record.utterance_id
+
+            record_key = (speaker_id, utterance_id)
+
+            if record_key in seen:
+                raise ManifestError(
+                    f"Duplicate utterance detected: "
+                    f"{record_key}"
+                )
+
+            seen.add(record_key)
+
+        # STEP 10: Lưu dữ liệu vào thuộc tính của object
         self._records = tuple(records)
 
     def __len__(self) -> int:
-        return len(self._records)
+        """Trả về tổng số utterance trong manifest."""
+
+        total_records = len(self._records)
+
+        return total_records
 
     def __getitem__(self, index: int) -> ManifestRecord:
-        return self._records[index]
+        """Lấy ManifestRecord tại vị trí index."""
+
+        record = self._records[index]
+
+        return record
 
     def __iter__(self) -> Iterator[ManifestRecord]:
-        return iter(self._records)
+        """Cho phép duyệt các record bằng vòng lặp for."""
+
+        iterator = iter(self._records)
+
+        return iterator
