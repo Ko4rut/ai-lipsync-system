@@ -45,7 +45,7 @@ The `--demo` choice calls one of `demo_manifest`, `demo_shard_reader`, or `demo_
 
 `demo_grid_dataset` creates one `GridSample`, prints its metadata, array shapes/dtypes, the first RGB pixel, and the first 10 waveform values. It **does not print full arrays**. The OpenCV window displays a face crop (not an original full video frame); press any key to close it. Playback uses `sounddevice` and requires an audio output device. Audio/image previews are separate demonstration functions and not responsibilities of `GridUtteranceDataset`.
 
-The `GridUtteranceDataset` outputs RGB uint8 frames of shape `(T, H, W, 3)` and mono float32 audio samples of shape `(N,)`. It validates frame count/index bounds, image dimensions, WAV format, and audio sample rate. This is not yet time-aligned training data or a Wav2Lip adapter.
+The `GridUtteranceDataset` outputs RGB uint8 frames with default shape `(T, 96, 96, 3)` and mono float32 audio samples of shape `(N,)`. Each JPEG is resized while preserving its aspect ratio, then centered with black padding to `frame_size=(width, height)`. This normalization happens only in memory; Silver TAR files are unchanged. The dataset also validates frame count/index bounds, WAV format, and audio sample rate. This is not yet time-aligned training data or a Wav2Lip adapter.
 
 ## Tests
 

@@ -14,8 +14,10 @@ from src.lipsync.datasets.error_exception import DatasetReadError
 from src.lipsync.datasets.manifest import ManifestRecord
 
 
-def make_jpeg(value: int, size: int = 12) -> bytes:
-    image = np.full((size, size, 3), value, dtype=np.uint8)
+def make_jpeg(value: int, width: int = 12, height: int | None = None) -> bytes:
+    if height is None:
+        height = width
+    image = np.full((height, width, 3), value, dtype=np.uint8)
     success, data = cv2.imencode(".jpg", image)
     assert success
     return data.tobytes()
@@ -48,6 +50,7 @@ def make_dataset(
     record: ManifestRecord,
     raw_frames: dict[int, bytes] | None = None,
     wav_bytes: bytes | None = None,
+    frame_size: tuple[int, int] = (96, 96),
 ) -> grid_dataset.GridUtteranceDataset:
     if raw_frames is None:
         raw_frames = {0: make_jpeg(10), 2: make_jpeg(80)}
@@ -76,7 +79,11 @@ def make_dataset(
 
     monkeypatch.setattr(grid_dataset, "GoldManifestIndex", FakeManifest)
     monkeypatch.setattr(grid_dataset, "GridShardReader", FakeReader)
-    return grid_dataset.GridUtteranceDataset(tmp_path, "train")
+    return grid_dataset.GridUtteranceDataset(
+        tmp_path,
+        "train",
+        frame_size=frame_size,
+    )
 
 
 def test_decoded_sample(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, sample_record: ManifestRecord):
@@ -84,7 +91,7 @@ def test_decoded_sample(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, sample_
     sample = dataset[0]
 
     assert len(dataset) == 1
-    assert sample.frames.shape == (2, 12, 12, 3)
+    assert sample.frames.shape == (2, 96, 96, 3)
     assert sample.frames.dtype == np.uint8
     assert sample.frame_indices == (0, 2)
     assert sample.audio.shape == (1600,)
@@ -102,11 +109,28 @@ def test_corrupt_jpeg(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, sample_re
     dataset.close()
 
 
-def test_variable_image_shapes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, sample_record: ManifestRecord):
-    frames = {0: make_jpeg(10), 2: make_jpeg(80, size=24)}
-    dataset = make_dataset(monkeypatch, tmp_path, sample_record, raw_frames=frames)
-    with pytest.raises(DatasetReadError, match="Variable crop dimensions"):
-        dataset[0]
+def test_variable_image_shapes_are_resized_and_padded(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    sample_record: ManifestRecord,
+):
+    frames = {
+        0: make_jpeg(10, width=12, height=24),
+        2: make_jpeg(80, width=24, height=12),
+    }
+    dataset = make_dataset(
+        monkeypatch,
+        tmp_path,
+        sample_record,
+        raw_frames=frames,
+        frame_size=(20, 16),
+    )
+
+    sample = dataset[0]
+
+    assert sample.frames.shape == (2, 16, 20, 3)
+    assert np.all(sample.frames[0, :, :6] == 0)
+    assert np.all(sample.frames[1, :3, :] == 0)
     dataset.close()
 
 
@@ -151,3 +175,13 @@ def test_empty_wav(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, sample_recor
 def test_invalid_fps(tmp_path: Path):
     with pytest.raises(ValueError, match="fps must be positive"):
         grid_dataset.GridUtteranceDataset(tmp_path, "train", fps=0)
+
+
+@pytest.mark.parametrize("frame_size", [(0, 96), (96, 0), (-1, 96)])
+def test_invalid_frame_size(tmp_path: Path, frame_size: tuple[int, int]):
+    with pytest.raises(ValueError, match="frame_size width and height must be positive"):
+        grid_dataset.GridUtteranceDataset(
+            tmp_path,
+            "train",
+            frame_size=frame_size,
+        )

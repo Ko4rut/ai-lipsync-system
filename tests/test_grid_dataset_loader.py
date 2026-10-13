@@ -66,7 +66,7 @@ def test_read_from_relocated_shard(tmp_path: Path) -> None:
     root = fixture_dataset(tmp_path)
     dataset = GridUtteranceDataset(root, "train")
     sample = dataset[0]
-    assert sample.frames.shape == (3, 12, 12, 3)
+    assert sample.frames.shape == (3, 96, 96, 3)
     assert sample.frames.dtype == np.uint8
     assert sample.frame_indices == (0, 1, 2)
     assert sample.audio.shape == (16000,)

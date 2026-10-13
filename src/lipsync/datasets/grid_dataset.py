@@ -38,7 +38,8 @@ class GridSample:
 class GridUtteranceDataset:
     """Load and decode a complete utterance, not a Wav2Lip training window.
 
-    Frames have RGB uint8 shape (T, H, W, 3).
+    Frames have RGB uint8 shape (T, H, W, 3). Each decoded frame is resized
+    proportionally and padded to ``frame_size`` without changing the TAR data.
     Audio is mono float32 with values approximately between -1 and 1.
     """
 
@@ -50,9 +51,16 @@ class GridUtteranceDataset:
         cache_dir: str | Path | None = None,
         fps: float = 25.0,
         max_open_shards: int = 2,
+        frame_size: tuple[int, int] = (96, 96),
     ) -> None:
         if fps <= 0:
             raise ValueError("fps must be positive")
+        if len(frame_size) != 2:
+            raise ValueError("frame_size must contain width and height")
+
+        frame_width, frame_height = frame_size
+        if frame_width <= 0 or frame_height <= 0:
+            raise ValueError("frame_size width and height must be positive")
 
         self.index = GoldManifestIndex(root=root, split=split)
         self.reader = GridShardReader(
@@ -61,6 +69,7 @@ class GridUtteranceDataset:
             max_open_shards=max_open_shards,
         )
         self.fps = fps
+        self.frame_size = frame_size
 
     def __len__(self) -> int:
         """Return the number of utterances in the selected Gold manifest."""
@@ -103,7 +112,7 @@ class GridUtteranceDataset:
         raw_frames: dict[int, bytes],
         frame_indices: tuple[int, ...],
     ) -> np.ndarray:
-        """Decode JPEG bytes into an RGB uint8 NumPy array."""
+        """Decode JPEG bytes into a fixed-size RGB uint8 NumPy array."""
         decoded_frames: list[np.ndarray] = []
         expected_shape: tuple[int, ...] | None = None
 
@@ -124,17 +133,53 @@ class GridUtteranceDataset:
                 )
 
             rgb_frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
+            normalized_frame = self._resize_with_padding(rgb_frame)
 
             if expected_shape is None:
-                expected_shape = rgb_frame.shape
-            elif rgb_frame.shape != expected_shape:
+                expected_shape = normalized_frame.shape
+            elif normalized_frame.shape != expected_shape:
                 raise DatasetReadError(
-                    f"Variable crop dimensions in {record.utterance_id}"
+                    f"Cannot normalize frame dimensions in {record.utterance_id}"
                 )
 
-            decoded_frames.append(rgb_frame)
+            decoded_frames.append(normalized_frame)
 
         return np.stack(decoded_frames, axis=0)
+
+    def _resize_with_padding(self, frame: np.ndarray) -> np.ndarray:
+        """Resize one frame proportionally and center it on a black canvas."""
+        target_width, target_height = self.frame_size
+        source_height, source_width = frame.shape[:2]
+
+        width_scale = target_width / source_width
+        height_scale = target_height / source_height
+        resize_scale = min(width_scale, height_scale)
+
+        resized_width = max(1, round(source_width * resize_scale))
+        resized_height = max(1, round(source_height * resize_scale))
+
+        interpolation = cv2.INTER_LINEAR
+        if resize_scale < 1.0:
+            interpolation = cv2.INTER_AREA
+
+        resized_frame = cv2.resize(
+            frame,
+            (resized_width, resized_height),
+            interpolation=interpolation,
+        )
+
+        output_frame = np.zeros(
+            (target_height, target_width, 3),
+            dtype=np.uint8,
+        )
+        offset_x = (target_width - resized_width) // 2
+        offset_y = (target_height - resized_height) // 2
+        output_frame[
+            offset_y:offset_y + resized_height,
+            offset_x:offset_x + resized_width,
+        ] = resized_frame
+
+        return output_frame
 
     def _decode_audio(
         self,
