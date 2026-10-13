@@ -8,6 +8,44 @@ training, inference hoặc evaluation chạy thực tế.
 Tài liệu yêu cầu gốc nằm tại
 [`docs/AI-based_LipSync_System_Research_Specification_v1.0.docx`](docs/AI-based_LipSync_System_Research_Specification_v1.0.docx).
 
+## Thiết lập môi trường phát triển (Dataset Loader)
+
+Sử dụng Python 3.10 trở lên, ưu tiên Python 3.10 trong môi trường ảo trên Windows.
+`requirements.txt` bao gồm cả thư viện tiền xử lý GRID (như PyTorch/face-alignment)
+và các thư viện cho Dataset Loader, demo, unit test. Vì vậy cài đặt có thể tải nhiều
+thư viện lớn; nếu chỉ cần đọc manifest thì bản thân parser chỉ sử dụng standard library.
+
+```powershell
+# Tại thư mục gốc repository
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+python -m pip install -r requirements.txt
+python -m pip install -e .
+
+# Tạo .env local từ file mẫu, rồi sửa đường dẫn đến GRID dataset
+Copy-Item .env.example .env
+
+# Chạy demo: không mở media
+python -m src.lipsync.datasets --demo manifest --split train
+python -m src.lipsync.datasets --demo shard --split train
+
+# Decode sample và mở frame khuôn mặt bằng OpenCV
+python -m src.lipsync.datasets --demo dataset --preview frame
+
+# Chỉ chạy unit tests (không cần GRID thật)
+python -m pytest tests/datasets/test_grid_dataset.py -v
+```
+
+Trên Linux/macOS dùng `source .venv/bin/activate` và `cp .env.example .env`
+thay cho hai lệnh tương ứng trên Windows. `LIPSYNC_DATA_ROOT` trong `.env` phải
+trỏ đến thư mục chứa `gold/` và `silver/shards/`. Không commit file `.env`.
+
+**Lưu ý:** `pip install -e .` giúp import package ở chế độ editable, nhưng
+`pyproject.toml` hiện chưa khai báo runtime dependencies. Hãy cài
+`requirements.txt` trước. Cần thiết bị âm thanh hoạt động nếu sử dụng
+`--preview audio` hoặc `--preview both`.
+
 ## Phạm vi source
 
 ```text
