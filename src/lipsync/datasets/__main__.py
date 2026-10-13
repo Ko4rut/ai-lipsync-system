@@ -108,6 +108,10 @@ def play_audio(sample: GridSample) -> None:
     except Exception as error:
         print(f"Audio device cannot play sample: {error}")
 
+def play_video(sample: GridSample) -> None:
+    from src.lipsync.video.preview import play_video
+    play_video(sample.frames)
+    
 
 def demo_grid_dataset(
     root: str | Path,
@@ -149,6 +153,8 @@ def demo_grid_dataset(
 
         if preview == "audio" or preview == "both":
             play_audio(sample)
+        if preview == "video" or preview == "all":
+            play_video(sample)
     finally:
         dataset.close()
 
@@ -169,7 +175,7 @@ def main() -> None:
     parser.add_argument("--split", choices=("train", "val", "test"), default="train")
     parser.add_argument("--index", type=int, default=0)
     parser.add_argument("--demo", choices=("manifest", "shard", "dataset"), default="dataset")
-    parser.add_argument("--preview", choices=("none", "frame", "audio", "both"), default="frame")
+    parser.add_argument("--preview", choices=("none", "frame", "video", "audio", "both"), default="frame")
     parser.add_argument("--frame-position", type=int, default=0)
     parser.add_argument("--cache-dir", default=None)
     args = parser.parse_args()
