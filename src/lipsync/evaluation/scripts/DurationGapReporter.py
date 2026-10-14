@@ -92,7 +92,7 @@ def main() -> None:
                 f"gap={row.duration_gap_sec:+.3f}s"
             )
 
-        print("\\n===== UTTERANCES WITH MISSING FRAMES =====")
+        print("\n===== UTTERANCES WITH MISSING FRAMES =====")
         for row in rows:
             if row.missing_frame_count > 0:
                 print(
@@ -101,7 +101,7 @@ def main() -> None:
                 )
 
         # Inspect short-video outliers without hard-coding one speaker/utterance.
-        print("\\n===== SHORTEST VIDEO SAMPLES =====")
+        print("\n===== SHORTEST VIDEO SAMPLES =====")
         shortest = sorted(rows, key=lambda row: row.video_duration_sec)
         for row in shortest[:5]:
             print(
