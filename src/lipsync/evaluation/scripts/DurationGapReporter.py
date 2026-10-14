@@ -1,8 +1,7 @@
 
-import os
 from pathlib import Path
 
-from dotenv import load_dotenv
+from src.lipsync.config import LipSyncSettings
 
 from src.lipsync.datasets.manifest import GoldManifestIndex
 from src.lipsync.evaluation.duration_report import DurationGapReporter
@@ -13,9 +12,8 @@ def main() -> None:
     project_root = Path(__file__).resolve().parents[4]
 
     # STEP 2: Đọc biến môi trường từ .env
-    load_dotenv(project_root / ".env")
-
-    data_root = os.getenv("LIPSYNC_DATA_ROOT")
+    settings = LipSyncSettings.from_env(project_root / ".env")
+    data_root = settings.data_root
 
     if not data_root:
         raise RuntimeError(
@@ -26,8 +24,8 @@ def main() -> None:
     reporter = DurationGapReporter(
         root=data_root,
         output_dir=project_root / "outputs" / "duration_gap",
-        fps=25.0,
-        threshold_ms=80.0,
+        fps=settings.fps,
+        threshold_ms=settings.duration_gap_threshold_ms,
     )
 
     # STEP 4: Phân tích từng split
