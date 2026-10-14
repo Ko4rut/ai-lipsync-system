@@ -65,3 +65,66 @@ source indices even if face detection skipped a frame.
 
 Synthetic fixtures only; a real-media smoke test must be executed in the
 dataset runtime before claiming the end-to-end real dataset is verified.
+
+## Quality selection and centralized settings (LSPR-45)
+
+Application defaults are declared in `src/lipsync/config.py` as
+`LipSyncSettings`; the repository-root `.env` can override them, and real
+environment variables override `.env`:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `LIPSYNC_DATA_ROOT` | unset | Gold/Silver dataset root |
+| `LIPSYNC_FPS` | `25` | FPS used for duration calculations |
+| `LIPSYNC_FRAME_WIDTH` | `96` | RGB output width |
+| `LIPSYNC_FRAME_HEIGHT` | `96` | RGB output height |
+| `LIPSYNC_MIN_FRAME_COUNT` | unset | Optional metadata-only quality filter |
+| `LIPSYNC_DURATION_GAP_THRESHOLD_MS` | `80` | Reporting threshold, **not** a training filter |
+
+Leave `LIPSYNC_MIN_FRAME_COUNT` empty to preserve the existing unfiltered
+dataset. For an exploratory training filter, set it to a positive integer
+such as `50`. That value is illustrative, not an established optimal cutoff.
+
+```python
+from src.lipsync.config import LipSyncSettings
+from src.lipsync.datasets import GridUtteranceDataset
+
+settings = LipSyncSettings.from_env()
+if settings.data_root is None:
+    raise RuntimeError("Set LIPSYNC_DATA_ROOT in .env")
+
+dataset = GridUtteranceDataset(
+    root=settings.data_root,
+    split="train",
+    settings=settings,
+)
+try:
+    print("Manifest entries:", len(dataset.index))
+    print("Selected entries:", len(dataset))
+finally:
+    dataset.close()
+```
+
+The filter maps public dataset indices to original Gold manifest indices
+and is applied **before** opening any Silver TARs. `_validate_frames`
+continues to verify raw TAR/manifest integrity after selection. No manifest
+records or shard contents are modified. An utterance with 5 valid frames may
+pass basic manifest QC but be excluded by the optional training filter.
+
+**Do not reject utterances because their audio and video durations differ by
+80 ms.** That is a diagnostic threshold, not an alignment judgment.
+Minimum frame count alone does not guarantee enough consecutive frames;
+alignment and missing-frame policies belong to later S05 tasks.
+
+The metadata report CLI uses `LIPSYNC_FPS` and
+`LIPSYNC_DURATION_GAP_THRESHOLD_MS` from the same settings module:
+
+```powershell
+python -m src.lipsync.evaluation.scripts.DurationGapReporter
+```
+
+Tests (synthetic/no Drive):
+```powershell
+python -m pytest tests/datasets/test_dataset_settings.py -v
+python -m pytest tests/ -v -ra
+```
