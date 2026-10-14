@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import io
 import wave
-from dataclasses import dataclass
 from pathlib import Path
 
 from src.lipsync.setting.config import LipSyncSettings
@@ -15,26 +14,7 @@ import numpy as np
 from .error_exception import DatasetReadError
 from .manifest import GoldManifestIndex, ManifestRecord
 from .shard_reader import GridShardReader
-
-
-@dataclass
-class GridSample:
-    """A decoded GRID utterance ready for audio/video preprocessing."""
-
-    speaker_id: str
-    utterance_id: str
-    frames: np.ndarray
-    frame_indices: tuple[int, ...]
-    audio: np.ndarray
-    sample_rate: int
-    fps: float
-    audio_duration_sec: float
-    video_duration_sec: float
-
-    @property
-    def duration_gap_sec(self) -> float:
-        """Difference between frame-index video span and WAV audio duration."""
-        return self.video_duration_sec - self.audio_duration_sec
+from .models import GridSample
 
 
 class GridUtteranceDataset:
