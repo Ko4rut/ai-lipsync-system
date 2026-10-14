@@ -5,7 +5,7 @@ from dataclasses import replace
 
 import pytest
 
-from src.lipsync.config import LipSyncSettings
+from lipsync.setting.config import LipSyncSettings
 from src.lipsync.datasets import grid_dataset
 from src.lipsync.datasets.manifest import ManifestRecord
 
