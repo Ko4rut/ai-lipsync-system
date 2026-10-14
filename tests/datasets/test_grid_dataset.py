@@ -83,6 +83,7 @@ def make_dataset(
         tmp_path,
         "train",
         frame_size=frame_size,
+        min_frame_count=1,  # Synthetic 2-frame fixtures must ignore user training filters.
     )
 
 

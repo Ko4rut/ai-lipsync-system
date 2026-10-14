@@ -7,6 +7,8 @@ import wave
 from dataclasses import dataclass
 from pathlib import Path
 
+from src.lipsync.setting.config import LipSyncSettings
+
 import cv2
 import numpy as np
 
@@ -49,10 +51,24 @@ class GridUtteranceDataset:
         split: str,
         *,
         cache_dir: str | Path | None = None,
-        fps: float = 25.0,
+        fps: float | None = None,
         max_open_shards: int = 2,
-        frame_size: tuple[int, int] = (96, 96),
+        frame_size: tuple[int, int] | None = None,
+        min_frame_count: int | None = None,
+        settings: LipSyncSettings | None = None,
     ) -> None:
+        # Explicit arguments override application settings.
+        if settings is None:
+            settings = LipSyncSettings.from_env()
+        if fps is None:
+            fps = settings.fps
+        if frame_size is None:
+            frame_size = settings.frame_size
+        if min_frame_count is None:
+            min_frame_count = settings.min_frame_count
+
+        if min_frame_count is not None and (type(min_frame_count) is not int or min_frame_count < 1):
+            raise ValueError("min_frame_count must be a positive integer")
         if fps <= 0:
             raise ValueError("fps must be positive")
         if len(frame_size) != 2:
@@ -63,6 +79,13 @@ class GridUtteranceDataset:
             raise ValueError("frame_size width and height must be positive")
 
         self.index = GoldManifestIndex(root=root, split=split)
+        self.min_frame_count = min_frame_count
+        self._eligible_indices: list[int] = []
+        for manifest_index in range(len(self.index)):
+            record = self.index[manifest_index]
+            if not self._is_eligible_record(record):
+                continue
+            self._eligible_indices.append(manifest_index)
         self.reader = GridShardReader(
             root=root,
             cache_dir=cache_dir,
@@ -71,9 +94,16 @@ class GridUtteranceDataset:
         self.fps = fps
         self.frame_size = frame_size
 
+    def _is_eligible_record(self, record: ManifestRecord) -> bool:
+        """Quality filter on Gold metadata, before opening Silver TARs."""
+        if self.min_frame_count is not None:
+            if record.frame_count < self.min_frame_count:
+                return False
+        return True
+
     def __len__(self) -> int:
-        """Return the number of utterances in the selected Gold manifest."""
-        return len(self.index)
+        """Return the number of eligible utterances."""
+        return len(self._eligible_indices)
 
     def _validate_frames(
         self,
@@ -226,7 +256,8 @@ class GridUtteranceDataset:
     def __getitem__(self, index: int) -> GridSample:
         """Use one manifest row to load, validate, and decode an utterance."""
         # STEP 1: Get metadata from the Gold manifest.
-        record = self.index[index]
+        manifest_index = self._eligible_indices[index]
+        record = self.index[manifest_index]
 
         # STEP 2: Read JPEG and WAV bytes from the Silver TAR.
         raw_frames, wav_bytes = self.reader.read_utterance(record)
