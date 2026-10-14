@@ -81,7 +81,8 @@ class GridUtteranceDataset:
         self.index = GoldManifestIndex(root=root, split=split)
         self.min_frame_count = min_frame_count
         self._eligible_indices: list[int] = []
-        for manifest_index, record in enumerate(self.index):
+        for manifest_index in range(len(self.index)):
+            record = self.index[manifest_index]
             if not self._is_eligible_record(record):
                 continue
             self._eligible_indices.append(manifest_index)
