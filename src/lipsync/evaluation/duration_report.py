@@ -5,7 +5,7 @@ import math
 
 from pathlib import Path
 from statistics import mean, median
-
+from dataclasses import asdict, fields
 from src.lipsync.datasets.manifest import (
     GoldManifestIndex,
     ManifestRecord,
@@ -166,8 +166,145 @@ class DurationGapReporter:
             has_missing_frames_count=missing_frames_count,
         )
 
-    # def _write_csv(self, path, rows, row_type):
-    #     # Ghi dữ liệu ra CSV
 
-    # def generate(self):
-    #     # Điều phối toàn bộ quá trình tạo báo cáo
+    def _write_csv(
+        self,
+        path: str | Path,
+        rows: list[DurationRow] | list[SummaryRow],
+        row_type: type[DurationRow] | type[SummaryRow],
+    ) -> Path:
+        """Export dataclass rows to a UTF-8 CSV file."""
+
+        # STEP 1: Xác định vị trí file đầu ra
+        output_path = Path(path)
+
+        # STEP 2: Kiểm tra loại dữ liệu
+        for row in rows:
+            if not isinstance(row, row_type):
+                raise TypeError(
+                    f"Expected {row_type.__name__}, "
+                    f"got {type(row).__name__}"
+                )
+
+        # STEP 3: Tạo thư mục nếu chưa tồn tại
+        output_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        # STEP 4: Lấy tên các cột từ dataclass
+        column_names = []
+
+        for field in fields(row_type):
+            column_names.append(field.name)
+
+        # STEP 5: Mở file CSV để ghi
+        with output_path.open(
+            mode="w",
+            newline="",
+            encoding="utf-8-sig",
+        ) as file:
+
+            writer = csv.DictWriter(
+                file,
+                fieldnames=column_names,
+            )
+
+            # STEP 6: Ghi header
+            writer.writeheader()
+
+            # STEP 7: Ghi từng dòng dữ liệu
+            for row in rows:
+                row_data = asdict(row)
+                writer.writerow(row_data)
+
+        # STEP 8: Trả về đường dẫn file
+        return output_path
+
+    def generate(self) -> dict[str, Path]:
+        """Analyze train/val/test and export duration-gap reports."""
+
+        all_rows: list[DurationRow] = []
+        split_summaries: list[SummaryRow] = []
+        speaker_summaries: list[SummaryRow] = []
+
+        # STEP 1: Analyze each split
+        for split in ("train", "val", "test"):
+
+            manifest = GoldManifestIndex(
+                root=self.root,
+                split=split,
+            )
+
+            rows: list[DurationRow] = []
+            speaker_groups: dict[str, list[DurationRow]] = {}
+
+            for record in manifest:
+                row = self.analyze_record(record)
+                rows.append(row)
+
+                speaker_id = row.speaker_id
+
+                if speaker_id not in speaker_groups:
+                    speaker_groups[speaker_id] = []
+
+                speaker_groups[speaker_id].append(row)
+
+            if not rows:
+                continue
+
+            # STEP 2: Aggregate split-level statistics
+            split_summary = self.summarize(
+                group=split,
+                rows=rows,
+            )
+
+            split_summaries.append(split_summary)
+            all_rows.extend(rows)
+
+            # STEP 3: Aggregate speaker-level statistics
+            for speaker_id, speaker_rows in speaker_groups.items():
+
+                speaker_summary = self.summarize(
+                    group=f"{split}/{speaker_id}",
+                    rows=speaker_rows,
+                )
+
+                speaker_summaries.append(speaker_summary)
+
+        if not all_rows:
+            raise ValueError("No utterances found in Gold manifests")
+
+        # STEP 4: Aggregate overall statistics
+        overall_summary = self.summarize(
+            group="ALL",
+            rows=all_rows,
+        )
+
+        split_summaries.append(overall_summary)
+
+        # STEP 5: Export CSV files
+        utterance_path = self._write_csv(
+            path=self.output_dir / "utterance_gaps.csv",
+            rows=all_rows,
+            row_type=DurationRow,
+        )
+
+        split_path = self._write_csv(
+            path=self.output_dir / "split_summary.csv",
+            rows=split_summaries,
+            row_type=SummaryRow,
+        )
+
+        speaker_path = self._write_csv(
+            path=self.output_dir / "speaker_summary.csv",
+            rows=speaker_summaries,
+            row_type=SummaryRow,
+        )
+
+        # STEP 6: Return generated report paths
+        return {
+            "utterance_gaps": utterance_path,
+            "split_summary": split_path,
+            "speaker_summary": speaker_path,
+        }
