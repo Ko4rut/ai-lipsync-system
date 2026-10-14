@@ -7,7 +7,7 @@ import wave
 from dataclasses import dataclass
 from pathlib import Path
 
-from lipsync.setting.config import LipSyncSettings
+from src.lipsync.setting.config import LipSyncSettings
 
 import cv2
 import numpy as np

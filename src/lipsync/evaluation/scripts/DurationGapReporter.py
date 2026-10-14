@@ -1,7 +1,7 @@
 
 from pathlib import Path
 
-from lipsync.setting.config import LipSyncSettings
+from src.lipsync.setting.config import LipSyncSettings
 
 from src.lipsync.datasets.manifest import GoldManifestIndex
 from src.lipsync.evaluation.duration_report import DurationGapReporter
