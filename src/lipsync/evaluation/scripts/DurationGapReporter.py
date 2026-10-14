@@ -81,54 +81,34 @@ def main() -> None:
             f"Utterances with missing frames: "
             f"{summary.has_missing_frames_count}"
         )
-    print("\n===== TOP 5 NEGATIVE GAPS =====")
-
-    negative_gaps = sorted(
-        rows,
-        key=lambda row: row.duration_gap_sec,
-    )
-
-    for row in negative_gaps[:5]:
-        print(
-            f"{row.speaker_id}/{row.utterance_id} | "
-            f"video={row.video_duration_sec:.3f}s | "
-            f"audio={row.audio_duration_sec:.3f}s | "
-            f"gap={row.duration_gap_sec:+.3f}s"
-        )
-
-    print("\n===== UTTERANCES WITH MISSING FRAMES =====")
-
-    for row in rows:
-        if row.missing_frame_count > 0:
+        # Report anomalies for the current split, not just the last split.
+        print("\n===== TOP 5 NEGATIVE GAPS =====")
+        negative_gaps = sorted(rows, key=lambda row: row.duration_gap_sec)
+        for row in negative_gaps[:5]:
             print(
                 f"{row.speaker_id}/{row.utterance_id} | "
-                f"missing={row.missing_frame_count}"
+                f"video={row.video_duration_sec:.3f}s | "
+                f"audio={row.audio_duration_sec:.3f}s | "
+                f"gap={row.duration_gap_sec:+.3f}s"
             )
-    if split == "test":
-        anomalous_ids = {
-            "lbbx6s",
-            "pwav7n",
-            "swihzs",
-            "sbaaza",
-            "pbau5n",
-        }
 
-        print("\n===== S8 ANOMALY DETAILS =====")
+        print("\n===== UTTERANCES WITH MISSING FRAMES =====")
+        for row in rows:
+            if row.missing_frame_count > 0:
+                print(
+                    f"{row.speaker_id}/{row.utterance_id} | "
+                    f"missing={row.missing_frame_count}"
+                )
 
-        for record in manifest:
-            if record.speaker_id != "s8":
-                continue
-
-            if record.utterance_id not in anomalous_ids:
-                continue
-
+        # Inspect short-video outliers without hard-coding one speaker/utterance.
+        print("\n===== SHORTEST VIDEO SAMPLES =====")
+        shortest = sorted(rows, key=lambda row: row.video_duration_sec)
+        for row in shortest[:5]:
             print(
-                f"\nUtterance: {record.utterance_id}"
-                f"\nFrame count: {record.frame_count}"
-                f"\nFirst frame: {record.first_frame_index}"
-                f"\nLast frame: {record.last_frame_index}"
-                f"\nFace detection ratio: {record.face_detection_ratio:.3f}"
-                f"\nAudio duration: {record.audio_duration_sec:.3f}s"
+                f"{row.speaker_id}/{row.utterance_id} | "
+                f"frames={row.frame_count} | "
+                f"video={row.video_duration_sec:.3f}s | "
+                f"audio={row.audio_duration_sec:.3f}s"
             )
 
 

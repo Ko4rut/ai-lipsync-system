@@ -68,7 +68,7 @@ dataset runtime before claiming the end-to-end real dataset is verified.
 
 ## Quality selection and centralized settings (LSPR-45)
 
-Application defaults are declared in `src/lipsync/config.py` as
+Application defaults are declared in `src/lipsync/setting/config.py` as
 `LipSyncSettings`; the repository-root `.env` can override them, and real
 environment variables override `.env`:
 
@@ -86,7 +86,7 @@ dataset. For an exploratory training filter, set it to a positive integer
 such as `50`. That value is illustrative, not an established optimal cutoff.
 
 ```python
-from src.lipsync.config import LipSyncSettings
+from src.lipsync.setting.config import LipSyncSettings
 from src.lipsync.datasets import GridUtteranceDataset
 
 settings = LipSyncSettings.from_env()
@@ -128,3 +128,15 @@ Tests (synthetic/no Drive):
 python -m pytest tests/datasets/test_dataset_settings.py -v
 python -m pytest tests/ -v -ra
 ```
+
+## Data model organization
+
+Data objects are separated from processing logic:
+
+- `src/lipsync/datasets/models.py`: decoded `GridSample`.
+- `src/lipsync/evaluation/models.py`: `DurationRow` and `SummaryRow`.
+- `src/lipsync/setting/config.py`: `LipSyncSettings` and `.env` loading.
+
+Existing imports via `datasets.grid_dataset.GridSample` and
+`evaluation.duration_report.DurationRow/SummaryRow` remain supported.
+This refactor does not change duration-gap math or media decoding.

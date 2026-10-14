@@ -3,7 +3,6 @@ from __future__ import annotations
 import csv
 import math
 
-from dataclasses import dataclass, asdict, fields
 from pathlib import Path
 from statistics import mean, median
 
@@ -11,46 +10,8 @@ from src.lipsync.datasets.manifest import (
     GoldManifestIndex,
     ManifestRecord,
 )
-@dataclass(frozen=True)
-class SummaryRow:
-    """Kết quả thống kê của một nhóm utterance."""
+from .models import DurationRow, SummaryRow
 
-    group: str
-    utterances: int
-
-    mean_gap_sec: float
-    median_gap_sec: float
-
-    min_gap_sec: float
-    max_gap_sec: float
-
-    p95_absolute_gap_sec: float
-
-    exceeds_threshold_count: int
-    exceeds_threshold_pct: float
-
-    has_missing_frames_count: int
-
-@dataclass(frozen=True)
-class DurationRow:
-    split: str
-    speaker_id: str
-    utterance_id: str
-
-    frame_count: int
-    first_frame_index: int
-    last_frame_index: int
-    missing_frame_count: int
-
-    video_duration_sec: float
-    audio_duration_sec: float
-
-    duration_gap_sec: float
-    absolute_gap_sec: float
-
-    exceeds_threshold: bool
-    
-    
 class DurationGapReporter:
 
     def __init__(
