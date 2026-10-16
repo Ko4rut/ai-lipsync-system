@@ -506,6 +506,8 @@ def _build_speaker_metadata(
             "audio_duration_sec": res.audio_duration_sec,
             "audio_sample_rate": res.audio_sample_rate,
             "audio_channels": res.audio_channels,
+            "video_duration_sec": res.video_duration_sec,
+            "audio_video_duration_delta_sec": res.audio_video_duration_delta_sec,
             "shard_member_prefix": res.shard_member_prefix,
         })
 
@@ -521,6 +523,7 @@ def _build_speaker_metadata(
         "processing": {
             "expected_fps": config.expected_fps,
             "target_audio_sample_rate": config.target_audio_sample_rate,
+            "max_audio_video_duration_delta_sec": config.max_audio_video_duration_delta_sec,
             "min_face_detection_ratio": config.min_face_detection_ratio,
             "min_consecutive_face_frames": config.min_consecutive_face_frames,
         },

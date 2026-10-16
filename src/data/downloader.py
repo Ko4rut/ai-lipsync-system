@@ -268,7 +268,7 @@ class SpeakerDownloader:
 
     def _download_primary_audio(self, speaker_id: str) -> Path:
         url = SHEFFIELD_AUDIO_URL_TEMPLATE.format(speaker_id=speaker_id)
-        dest = self._cfg.speaker_downloads_dir(speaker_id) / f"{speaker_id}.tar"
+        dest = self._cfg.speaker_downloads_dir(speaker_id) / f"{speaker_id}_50kHz.tar"
         return _download_url(url, dest, config=self._cfg, description=f"[primary] audio {speaker_id}")
 
     # ------------------------------------------------------------------

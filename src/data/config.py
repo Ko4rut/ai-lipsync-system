@@ -44,8 +44,10 @@ SHEFFIELD_VIDEO_URL_TEMPLATE: str = (
 
 #: URL template for audio archive (per-speaker).
 SHEFFIELD_AUDIO_URL_TEMPLATE: str = (
-    SHEFFIELD_BASE_URL + "/gridcorpus/{speaker_id}/audio/{speaker_id}.tar"
+    SHEFFIELD_BASE_URL + "/gridcorpus/{speaker_id}/audio/{speaker_id}_50kHz.tar"
 )
+
+# https://spandh.dcs.shef.ac.uk/gridcorpus/s1/audio/s1_50kHz.tar
 
 #: Zenodo record ID containing the full GRID dataset as fallback.
 ZENODO_RECORD_ID: str = "3625687"
@@ -72,7 +74,7 @@ EXPECTED_VIDEO_FPS: float = 25.0
 FPS_TOLERANCE_FRACTION: float = 0.05
 
 #: Original GRID audio sample rate.
-GRID_AUDIO_SAMPLE_RATE: int = 25_000
+GRID_AUDIO_SAMPLE_RATE: int = 50_000
 
 #: Target audio sample rate for Wav2Lip training.
 TARGET_AUDIO_SAMPLE_RATE: int = 16_000
@@ -99,6 +101,11 @@ FACE_DETECTION_BATCH_SIZE: int = 16
 
 #: Minimum audio duration (seconds) for an utterance to be considered valid.
 MIN_AUDIO_DURATION_SEC: float = 0.1
+
+#: Maximum allowed absolute difference between audio and video duration.
+#: A 100 ms tolerance absorbs normal container/probe rounding while rejecting
+#: endpointed audio that no longer covers the original video timeline.
+MAX_AUDIO_VIDEO_DURATION_DELTA_SEC: float = 0.1
 
 
 # ---------------------------------------------------------------------------
@@ -227,6 +234,7 @@ class PipelineConfig:
     jpeg_quality: int = JPEG_QUALITY
     face_detection_batch_size: int = FACE_DETECTION_BATCH_SIZE
     min_audio_duration_sec: float = MIN_AUDIO_DURATION_SEC
+    max_audio_video_duration_delta_sec: float = MAX_AUDIO_VIDEO_DURATION_DELTA_SEC
 
     # Gold split
     split_seed: int = SPLIT_SEED

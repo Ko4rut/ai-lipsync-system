@@ -38,6 +38,7 @@ class InvalidReason:
     AUDIO_CONVERSION_FAILED = "AUDIO_CONVERSION_FAILED"
     EMPTY_AUDIO = "EMPTY_AUDIO"
     INVALID_OUTPUT_AUDIO_RATE = "INVALID_OUTPUT_AUDIO_RATE"
+    AUDIO_VIDEO_DURATION_MISMATCH = "AUDIO_VIDEO_DURATION_MISMATCH"
     CORRUPT_OUTPUT = "CORRUPT_OUTPUT"
     UNKNOWN_ERROR = "UNKNOWN_ERROR"
 
@@ -63,6 +64,8 @@ class UtteranceQCResult:
     audio_duration_sec: Optional[float] = None
     audio_sample_rate: Optional[int] = None
     audio_channels: Optional[int] = None
+    video_duration_sec: Optional[float] = None
+    audio_video_duration_delta_sec: Optional[float] = None
 
     # Shard member location
     shard_member_prefix: str = ""
@@ -152,6 +155,21 @@ def validate_utterance(
     if audio_duration_sec is None or audio_duration_sec < config.min_audio_duration_sec:
         res.invalid_reason = InvalidReason.EMPTY_AUDIO
         return res
+
+    # The audio and video must describe the same timeline. This catches
+    # endpointed audio paired with an untrimmed video, which would otherwise
+    # pass the independent audio and video checks above.
+    if source_fps > 0:
+        res.video_duration_sec = source_frame_count / source_fps
+        res.audio_video_duration_delta_sec = abs(
+            audio_duration_sec - res.video_duration_sec
+        )
+        if (
+            res.audio_video_duration_delta_sec
+            > config.max_audio_video_duration_delta_sec
+        ):
+            res.invalid_reason = InvalidReason.AUDIO_VIDEO_DURATION_MISMATCH
+            return res
 
     res.valid = True
     return res

@@ -96,6 +96,59 @@ def test_audio_conversion_temp_file_keeps_wav_suffix(tmp_path: Path) -> None:
     assert output.exists()
 
 
+@pytest.mark.parametrize(
+    ("audio_duration_sec", "expected_valid", "expected_reason"),
+    [
+        (3.08, True, None),
+        (2.80, False, "AUDIO_VIDEO_DURATION_MISMATCH"),
+    ],
+)
+def test_qc_rejects_audio_video_duration_mismatch(
+    tmp_path: Path,
+    audio_duration_sec: float,
+    expected_valid: bool,
+    expected_reason: str | None,
+) -> None:
+    """QC allows probe rounding but rejects audio that lost video timeline."""
+    import numpy as np
+
+    from data.config import PipelineConfig
+    from data.qc import validate_utterance
+
+    for index in range(3):
+        (tmp_path / f"{index}.jpg").write_bytes(b"jpeg")
+    (tmp_path / "audio.wav").write_bytes(b"RIFF")
+
+    config = PipelineConfig(
+        workspace_root=tmp_path,
+        max_audio_video_duration_delta_sec=0.1,
+    )
+    with patch(
+        "data.qc.cv2.imread",
+        return_value=np.zeros((8, 8, 3), dtype=np.uint8),
+    ):
+        result = validate_utterance(
+            "test-utterance",
+            silver_utterance_dir=tmp_path,
+            source_fps=25.0,
+            source_frame_count=75,
+            cropped_frame_count=75,
+            detected_frame_indices=list(range(75)),
+            audio_duration_sec=audio_duration_sec,
+            audio_sample_rate=16_000,
+            audio_channels=1,
+            speaker_id="s1",
+            config=config,
+        )
+
+    assert result.valid is expected_valid
+    assert result.invalid_reason == expected_reason
+    assert result.video_duration_sec == pytest.approx(3.0)
+    assert result.audio_video_duration_delta_sec == pytest.approx(
+        abs(audio_duration_sec - 3.0)
+    )
+
+
 def test_sfd_adapter_converts_numpy_nhwc_to_torch_nchw() -> None:
     """The face-alignment SFD API requires a PyTorch NCHW batch."""
     import numpy as np
